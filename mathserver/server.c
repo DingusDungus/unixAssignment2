@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-#include "include/thread.h"
+#include "include/threadHandler.h"
 
 int main(int argc, char const *argv[])
 {
@@ -29,6 +29,9 @@ int main(int argc, char const *argv[])
     servAddr.sin_family = AF_INET;
     servAddr.sin_port = htons(PORT_NUMBER);
     servAddr.sin_addr.s_addr = INADDR_ANY;
+
+    struct threadHandler handler;
+    initHandler(handler);
 
     // bind socket to the specified IP and port
     bind(servSockD, (struct sockaddr *)&servAddr,
