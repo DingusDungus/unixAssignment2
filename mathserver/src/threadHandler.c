@@ -1,8 +1,15 @@
 #include "../include/threadHandler.h"
 
-void initThreadHandler(struct threadHandler handler)
+// Creates a thread for the new client and then detaches it from the main-thread
+void newRequest(int clientSocket, int calculationType, int *data[])
 {
-    handler.arraySize = 0;
-    handler.currentMaxSize = 10;
-    handler.threads = malloc(sizeof(pthread_t)*10);
+
+    struct threadParam *parameters = malloc(sizeof(parameters));
+    pthread_t *newCLientThread = malloc(sizeof(newCLientThread));
+    parameters->calculationType = calculationType;
+    parameters->clientSocket = clientSocket;
+    parameters->data = data;
+
+    pthread_create(newCLientThread, NULL, threadInit, (void*)parameters);
+    pthread_detach(*newCLientThread);
 }

@@ -5,7 +5,14 @@
 #include <sys/types.h>
 #include <pthread.h>
 
-void *threadInit(void *clientSocket, void *calculationT, void* data);
+struct threadParam 
+{
+    int clientSocket;
+    int calculationType;
+    int **data;
+};
+
+void *threadInit(void *threadparam);
 
 int** threadHandle(int calculationType, int *data[]);
 

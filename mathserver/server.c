@@ -30,24 +30,20 @@ int main(int argc, char const *argv[])
     servAddr.sin_port = htons(PORT_NUMBER);
     servAddr.sin_addr.s_addr = INADDR_ANY;
 
-    struct threadHandler handler;
-    initHandler(handler);
-
     // bind socket to the specified IP and port
     bind(servSockD, (struct sockaddr *)&servAddr,
          sizeof(servAddr));
 
     // listen for connections
-    pthread_t *threads = malloc(sizeof(pthread_t) * 10);
-
     listen(servSockD, 1);
     while (1)
     {
         // integer to hold client socket.
         int clientSocket = accept(servSockD, NULL, NULL);
-
+        int **data = malloc(69);
+        int calculationType = 0;
         // Create thread to handle client
-
+        newRequest(clientSocket, calculationType, data);
     }
 
     return 0;
