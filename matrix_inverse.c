@@ -1,23 +1,23 @@
 /***************************************************************************
  *
  * Sequential version of Matrix Inverse
- * An adapted version of the code by Håkan Grahn
+ * An adapted version of the code by Hkan Grahn
  ***************************************************************************/
 
-#include <stdio.h>
 #include <assert.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_SIZE 4096
 
 typedef double matrix[MAX_SIZE][MAX_SIZE];
 
-int N;            /* matrix size		*/
+int N;            /* matrix size                */
 int maxnum;       /* max number of element*/
-char *Init;       /* matrix init type	*/
-int PRINT;        /* print switch		*/
-matrix A;         /* matrix A		*/
+char *Init;       /* matrix init type   */
+int PRINT;        /* print switch               */
+matrix A;         /* matrix A           */
 matrix I = {0.0}; /* The A inverse matrix, which will be initialized to the
                      identity matrix */
 
@@ -32,9 +32,9 @@ int main(int argc, char **argv) {
   printf("Matrix Inverse\n");
   int i, timestart, timeend, iter;
 
-  Init_Default();           /* Init default values	*/
-  Read_Options(argc, argv); /* Read arguments	*/
-  Init_Matrix();            /* Init the matrix	*/
+  Init_Default();           /* Init default values      */
+  Read_Options(argc, argv); /* Read arguments   */
+  Init_Matrix();            /* Init the matrix  */
   find_inverse();
 
   if (PRINT == 1) {
@@ -87,7 +87,7 @@ void Init_Matrix() {
 
   printf("\nsize      = %dx%d ", N, N);
   printf("\nmaxnum    = %d \n", maxnum);
-  printf("Init	  = %s \n", Init);
+  printf("Init    = %s \n", Init);
   printf("Initializing matrix...");
 
   if (strcmp(Init, "rand") == 0) {
@@ -153,12 +153,12 @@ int Read_Options(int argc, char **argv) {
         exit(0);
         break;
       case 'u':
-        printf("\nUsage: matinv [-n problemsize]\n");
-        printf("           [-D] show default values \n");
-        printf("           [-h] help \n");
-        printf("           [-I init_type] fast/rand \n");
-        printf("           [-m maxnum] max random no \n");
-        printf("           [-P print_switch] 0/1 \n");
+        printf("\nUsage: matinv [-n problemsize]\n \
+          [-D] show default values \n \
+          [-h] help \n \
+          [-I init_type] fast/rand \n \
+          [-m maxnum] max random no \n \
+          [-P print_switch] 0/1 \n");
         exit(0);
         break;
       case 'D':
