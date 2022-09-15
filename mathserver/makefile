@@ -3,7 +3,7 @@ main:
 	mv *.o ./objects/
 
 server: main
-	gcc ./objects/*.o *.o -o mathserver
+	gcc ./objects/*.o -o mathserver
 
 clean:
 	rm *.o ./objects/*.o
