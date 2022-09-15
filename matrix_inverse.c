@@ -5,6 +5,7 @@
  ***************************************************************************/
 
 #include <assert.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,12 +22,33 @@ matrix A;         /* matrix A           */
 matrix I = {0.0}; /* The A inverse matrix, which will be initialized to the
                      identity matrix */
 
+pthread_barrier_t barrier;
+struct threadArgs {
+  int id;
+  int matrixSize;
+  int maxNum;
+};
+
 /* forward declarations */
 void find_inverse(void);
+void parallel_find_inverse(void);
 void Init_Matrix(void);
 void Print_Matrix(matrix M, char name[]);
 void Init_Default(void);
 int Read_Options(int, char **);
+void *child(void *params);
+
+void *child(void *params) {
+  struct threadArgs *args = (struct threadArgs *)params;
+  int id = args->id;
+  int size = args->matrixSize;
+  int maxNum = args->maxNum;
+  pthread_barrier_wait(&barrier);
+  // TODO: split find_inverse() to different parrallelised functions.
+  // mulRow(id, size);
+  free(args);
+  return NULL;
+}
 
 int main(int argc, char **argv) {
   printf("Matrix Inverse\n");
@@ -36,11 +58,33 @@ int main(int argc, char **argv) {
   Read_Options(argc, argv); /* Read arguments   */
   Init_Matrix();            /* Init the matrix  */
   find_inverse();
+  parallel_find_inverse();
 
   if (PRINT == 1) {
     // Print_Matrix(A, "End: Input");
     Print_Matrix(I, "Inversed");
   }
+}
+
+void parallel_find_inverse() {
+  struct threadArgs *args;
+
+  pthread_t *children;
+  int id = 0;
+  pthread_barrier_init(&barrier, NULL, N);
+
+  children = malloc(N * sizeof(pthread_t));
+  for (id = 0; id < N; id++) {
+    args = malloc(sizeof(struct threadArgs));
+    args->id = id;
+    args->matrixSize = N;
+    args->maxNum = maxnum;
+    pthread_create(&(children[id]), NULL, child, (void *)args);
+  }
+  for (id = 0; id < N; id++) {
+    pthread_join(children[id], NULL);
+  }
+  free(children);
 }
 
 void find_inverse() {

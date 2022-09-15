@@ -2,7 +2,7 @@ clean:
 	rm matinv kmeans
 
 matinv:
-	gcc -w -O2 -o matinv matrix_inverse.c
+	gcc -w -O2 -lpthread -o matinv matrix_inverse.c
 
 kmeans:
-	gcc -w -O2 -o kmeans kmeans.c
+	gcc -w -O2 -lpthread -o kmeans kmeans.c
