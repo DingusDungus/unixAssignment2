@@ -1,8 +1,13 @@
-clean:
-	rm matinv kmeans
+clean: cleanMatinv cleanKmeans
 
-matinv:
-	gcc -w -O2 -lpthread -o matinv matrix_inverse.c
+cleanMatinv:
+	rm -f matinv
 
-kmeans:
-	gcc -w -O2 -lpthread -o kmeans kmeans.c
+cleanKmeans:
+	rm -f kmeans
+
+matinv: cleanMatinv
+	gcc -Wall -w -O2 -lpthread -o matinv matrix_inverse.c
+
+kmeans: cleanKmeans
+	gcc -Wall -w -O2 -lpthread -o kmeans kmeans.c
