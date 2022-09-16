@@ -20,11 +20,14 @@ int mainServer(int port, int address, int *clientSocket, int *pid)
 
     // listen for connections
     listen(servSockD, 1);
-    while (1)
+    printf("Listening on %d!\n", INADDR_ANY);
+    while (1 && *pid != 0)
     {
         // integer to hold client socket.
         *clientSocket = accept(servSockD, NULL, NULL);
+        printf("Accepted client!\n");
         *pid = fork();
+        printf("Child process pid: %d\n", *pid);
     }
 
     return 0;
