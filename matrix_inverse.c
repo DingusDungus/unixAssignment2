@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define MAX_SIZE 4096
 
@@ -48,15 +49,20 @@ int main(int argc, char **argv) {
   Init_Default();           /* Init default values      */
   Read_Options(argc, argv); /* Read arguments   */
   Init_Matrix();            /* Init the matrix  */
-  printf("Starting Sequential\n");
-  find_inverse();
-  printf("Sequential done\n");
+
+  // Sequential
+  // printf("Starting Sequential\n");
+  // find_inverse();
+  // printf("Sequential done\n");
+
+  // Parallel
   printf("Starting parallel\n");
   start_parallel_inversion();
   printf("Parallel done\n");
 
+  // print
   if (PRINT == 1) {
-    // Print_Matrix(A, "End: Input");
+    Print_Matrix(A, "End: Input");
     Print_Matrix(I, "Inversed");
   }
 }
@@ -66,11 +72,10 @@ void *child(void *params) {
   int id = args->id;
   int size = args->matrixSize;
   int maxNum = args->maxNum;
-  // pthread_barrier_wait(&barrier);
-  printf("Proccess %d starting work...\n", id);
+  // printf("Proccess %d starting work...\n", id);
   parallel_find_inverse(id);
   free(args);
-  printf("Proccess %d done and freed.\n", id);
+  // printf("Proccess %d done and freed.\n", id);
   return NULL;
 }
 
@@ -101,10 +106,14 @@ void parallel_find_inverse(int col) {
 
   /* Bringing the matrix A to the identity form */
   for (p = 0; p < N; p++) { /* Outer loop */
+    pthread_barrier_wait(&barrier);
     pivalue = A[p][p];
     A[p][col] = A[p][col] / pivalue; /* Division step on A */
     I[p][col] = I[p][col] / pivalue; /* Division step on I */
+    // printf("thread %d hit first barrier\n", col);
     assert(A[p][p] == 1.0);
+    // Print_Matrix(A, "End: Input");
+    // Print_Matrix(I, "Inversed");
 
     // Elimination
     double multiplier;
@@ -116,6 +125,7 @@ void parallel_find_inverse(int col) {
             A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
         I[row][col] =
             I[row][col] - I[p][col] * multiplier; /* Elimination step on I */
+        // printf("thread %d hit second barrier\n", col);
         assert(A[row][p] == 0.0);
       }
     }
@@ -134,6 +144,8 @@ void find_inverse() {
       I[p][col] = I[p][col] / pivalue; /* Division step on I */
     }
     assert(A[p][p] == 1.0);
+    Print_Matrix(A, "End: Input");
+    Print_Matrix(I, "Inversed");
 
     // Elimination
     double multiplier;
