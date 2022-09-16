@@ -1,5 +1,5 @@
 main:
-	gcc -Wall -Werror -c server.c src/*.c
+	gcc -c server.c src/*.c
 	mv *.o ./objects/
 
 server: main
