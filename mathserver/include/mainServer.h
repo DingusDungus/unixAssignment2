@@ -8,8 +8,14 @@
 #include <sys/socket.h> // for socket APIs
 #include <sys/types.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <string.h>
 
-int mainServer(int port, int address, int *clientSocket, int *pid);
+#include "serverOptions.h"
 
+int mainServer(int *clientSocket, int *pid, struct options *serverOpts);
+
+void printHelp();
 
 #endif

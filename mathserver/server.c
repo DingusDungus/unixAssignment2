@@ -1,24 +1,24 @@
 #include "include/forkedServer.h"
 #include "include/mainServer.h"
+#include "include/serverArgsParsing.h"
 
 int main(int argc, char const *argv[])
 {
-    int *clientSocket = NULL;
-    int *pid = NULL;
+    int *pid = malloc(sizeof(pid));
+    *pid = 1;
+    int *clientSocket = malloc(sizeof(clientSocket));
     printf("Initialization...\n");
-    // get port for server
-    printf("Server starting!; pid: %d\n", getpid());
-    if (argc > 2)
+    struct options *serverOpts = malloc(sizeof(serverOpts));    
+    if (parseArgs(argv, argc, serverOpts) == false)
     {
-        printf("Error; No port given!\n");
         return -1;
     }
-    const int PORT_NUMBER = atoi(argv[1]);
 
-    pid = malloc(sizeof(pid));
-    *pid = 1;
-    clientSocket = malloc(sizeof(clientSocket));
-    mainServer(PORT_NUMBER, INADDR_ANY, clientSocket, pid);
+    // If options like -h is given the server will stop prematurely
+    if (mainServer(clientSocket, pid, serverOpts))
+    {
+        return 0;
+    }
 
     // Section which a child process comes to naturally
     printf("Client fork starting!; pid: %d\n", getpid());
