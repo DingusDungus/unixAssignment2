@@ -5,9 +5,11 @@
 #include <sys/socket.h> // for socket APIs
 #include <sys/types.h>
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char const *argv[])
+{
   // get port for server
-  if (argc > 3) {
+  if (argc > 3)
+  {
     printf("Error; Not enough arguments (require port and IP)!\n");
     return -1;
   }
@@ -16,7 +18,8 @@ int main(int argc, char const *argv[]) {
   // Get IP for server
   struct in_addr SERVER_ADDRESS;
   int result = inet_pton(AF_INET, argv[2], &SERVER_ADDRESS);
-  if (result != 1) {
+  if (result != 1)
+  {
     printf("Error; IP-address is invalid!\n");
     return -1;
   }
@@ -29,17 +32,22 @@ int main(int argc, char const *argv[]) {
   servAddr.sin_port = htons(PORT_NUMBER);
   servAddr.sin_addr.s_addr = SERVER_ADDRESS.s_addr;
 
+  printf("Connecting to %d", SERVER_ADDRESS.s_addr);
   int connectStatus =
       connect(sockD, (struct sockaddr *)&servAddr, sizeof(servAddr));
 
-  if (connectStatus == -1) {
+  if (connectStatus == -1)
+  {
     printf("Error...\n");
-  } else {
+  }
+  else
+  {
+    char cleMsg[255] = "Message from the client, hello!";
     char strData[255];
-
     recv(sockD, strData, sizeof(strData), 0);
-
     printf("Message: %s\n", strData);
+    send(sockD, cleMsg, sizeof(cleMsg), 0);
+
   }
 
   return 0;
