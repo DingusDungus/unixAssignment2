@@ -43,6 +43,7 @@ kmeans
 *.su
 *.idb
 *.pdb
+*.vscode/
 
 # Kernel Module Compile Results
 *.mod*

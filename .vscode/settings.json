@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "forkedserver.h": "c",
-        "inet.h": "c",
-        "forkstrategy.h": "c"
-    }
-}
