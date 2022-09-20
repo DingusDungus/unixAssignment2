@@ -11,7 +11,7 @@ struct options
     bool daemonRequested;
     bool muxbasic;
     bool muxscale;
-    bool regulerServer;
+    bool fork;
 };
 
 #endif

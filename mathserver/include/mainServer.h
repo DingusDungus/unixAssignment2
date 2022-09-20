@@ -9,12 +9,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <ifaddrs.h>
 #include <string.h>
 
 #include "serverOptions.h"
+#include "strategies.h"
 
-int mainServer(int *clientSocket, int *pid, struct options *serverOpts);
+int mainServer(int *clientSocket, struct options *serverOpts);
 
 void printHelp();
 

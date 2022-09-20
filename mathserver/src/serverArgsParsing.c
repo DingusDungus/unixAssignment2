@@ -3,7 +3,7 @@
 bool parseArgs(const char **argv, int argc,struct options *serverOpts)
 {
     // Sets default values for options
-    serverOpts->regulerServer = true;
+    serverOpts->fork = true;
     serverOpts->port = 3000;
 
     serverOpts->daemonRequested = false;
@@ -36,7 +36,7 @@ bool parseArgs(const char **argv, int argc,struct options *serverOpts)
         }
         else if (strcmp(commandLine, "-s") == 0)
         {
-            serverOpts->regulerServer = false;
+            serverOpts->fork = false;
             if ((i + 1) >= argc)
             {
                 printf("Error; no option given after -s\n");
