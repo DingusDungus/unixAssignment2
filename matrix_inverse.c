@@ -26,8 +26,11 @@ matrix I = {0.0}; /* The A inverse matrix, which will be initialized to the
 pthread_barrier_t barrier;
 struct threadArgs {
   int id;
-  int matrixSize;
-  int maxNum;
+  int p;
+  int col;
+  int row;
+  int pivalue;
+  int multiplier;
 };
 
 /* forward declarations */
@@ -37,8 +40,8 @@ void Print_Matrix(matrix M, char name[]);
 void Init_Default(void);
 int Read_Options(int, char **);
 void *child(void *params);
-void matrix_to_identity(int row, int col);
-void elimination(int row, int col);
+void matrix_to_identity(int p, int col, double pivalue);
+void matrix_elimination(int p, int row, int col, double multiplier);
 void parallel_find_inverse(int col);
 void start_parallel_inversion(void);
 
@@ -70,10 +73,46 @@ int main(int argc, char **argv) {
 void *child(void *params) {
   struct threadArgs *args = (struct threadArgs *)params;
   int id = args->id;
-  int size = args->matrixSize;
-  int maxNum = args->maxNum;
+  int p = args->p;
+  int col = args->col;
+  int row = args->row;
+  int pivalue = args->pivalue;
+  int multiplier = args->multiplier;
   // printf("Proccess %d starting work...\n", id);
-  parallel_find_inverse(id);
+  matrix_to_identity(p, id, pivalue);
+  pthread_barrier_wait(&barrier);
+  free(args);
+  // printf("Proccess %d done and freed.\n", id);
+  return NULL;
+}
+
+void *start_parallel_identity(void *params) {
+  struct threadArgs *args = (struct threadArgs *)params;
+  int id = args->id;
+  int p = args->p;
+  int col = args->col;
+  int row = args->row;
+  int pivalue = args->pivalue;
+  int multiplier = args->multiplier;
+  // printf("Proccess %d starting work...\n", id);
+  matrix_to_identity(p, id, pivalue);
+  pthread_barrier_wait(&barrier);
+  free(args);
+  // printf("Proccess %d done and freed.\n", id);
+  return NULL;
+}
+
+void *start_parallel_elimination(void *params) {
+  struct threadArgs *args = (struct threadArgs *)params;
+  int id = args->id;
+  int p = args->p;
+  int col = args->col;
+  int row = args->row;
+  int pivalue = args->pivalue;
+  int multiplier = args->multiplier;
+  // printf("Proccess %d starting work...\n", id);
+  matrix_elimination(p, row, col, multiplier);
+  pthread_barrier_wait(&barrier);
   free(args);
   // printf("Proccess %d done and freed.\n", id);
   return NULL;
@@ -90,9 +129,26 @@ void start_parallel_inversion() {
   for (id = 0; id < N; id++) {
     args = malloc(sizeof(struct threadArgs));
     args->id = id;
-    args->matrixSize = N;
-    args->maxNum = maxnum;
+    args->col = id;
     pthread_create(&(children[id]), NULL, child, (void *)args);
+  }
+  for (id = 0; id < N; id++) {
+    pthread_join(children[id], NULL);
+  }
+  free(children);
+}
+
+void start_children(void *workerFunc, struct threadArgs *args) {
+  pthread_t *children;
+  int id = 0;
+  pthread_barrier_init(&barrier, NULL, N);
+
+  children = malloc(N * sizeof(pthread_t));
+  for (id = 0; id < N; id++) {
+    args = malloc(sizeof(struct threadArgs));
+    args->id = id;
+    args->col = id;
+    pthread_create(&(children[id]), NULL, workerFunc, (void *)args);
   }
   for (id = 0; id < N; id++) {
     pthread_join(children[id], NULL);
@@ -106,11 +162,14 @@ void parallel_find_inverse(int col) {
 
   /* Bringing the matrix A to the identity form */
   for (p = 0; p < N; p++) { /* Outer loop */
-    pthread_barrier_wait(&barrier);
     pivalue = A[p][p];
-    A[p][col] = A[p][col] / pivalue; /* Division step on A */
-    I[p][col] = I[p][col] / pivalue; /* Division step on I */
+    // TODO: Code to start and join threads for matrix_to_identity.
+    struct threadArgs *identityArgs;
+    identityArgs->pivalue = pivalue;
+    identityArgs->p = p;
+    start_children(start_parallel_identity, identityArgs);
     // printf("thread %d hit first barrier\n", col);
+    pthread_barrier_wait(&barrier);
     assert(A[p][p] == 1.0);
     // Print_Matrix(A, "End: Input");
     // Print_Matrix(I, "Inversed");
@@ -121,15 +180,28 @@ void parallel_find_inverse(int col) {
       multiplier = A[row][p];
       if (row != p) // Perform elimination on all except the current pivot row
       {
-        A[row][col] =
-            A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
-        I[row][col] =
-            I[row][col] - I[p][col] * multiplier; /* Elimination step on I */
+        // TODO: Code to start and join threads for matrix_elimination.
+        struct threadArgs *eliminationArgs;
+        eliminationArgs->multiplier = multiplier;
+        eliminationArgs->p = p;
+        start_children(start_parallel_elimination, identityArgs);
         // printf("thread %d hit second barrier\n", col);
         assert(A[row][p] == 0.0);
       }
     }
   }
+}
+
+void matrix_to_identity(int p, int col, double pivalue) {
+  A[p][col] = A[p][col] / pivalue; /* Division step on A */
+  I[p][col] = I[p][col] / pivalue; /* Division step on I */
+}
+
+void matrix_elimination(int p, int row, int col, double multiplier) {
+  A[row][col] =
+      A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
+  I[row][col] =
+      I[row][col] - I[p][col] * multiplier; /* Elimination step on I */
 }
 
 void find_inverse() {
