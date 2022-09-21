@@ -25,11 +25,11 @@ int forkStrategy(int *clientSocket, struct sockaddr_in servAddr, int servSockD, 
         if (fork() == 0)
         {
             printf("Child process pid: %d\n", getpid());
-            return 0;
+            return forkedServer(clientSocket);
         }
     }
     printf("Client fork starting!; pid: %d\n", getpid());
-    forkedServer(clientSocket);
+    return 0;
 }
 
 int muxBasic(int *clientSocket, struct sockaddr_in servAddr, int servSockD, int port)

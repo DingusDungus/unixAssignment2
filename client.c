@@ -31,8 +31,8 @@ int main(int argc, char const *argv[])
   servAddr.sin_family = AF_INET;
   servAddr.sin_port = htons(PORT_NUMBER);
   servAddr.sin_addr.s_addr = SERVER_ADDRESS.s_addr;
-
   printf("Connecting to %d", SERVER_ADDRESS.s_addr);
+
   int connectStatus =
       connect(sockD, (struct sockaddr *)&servAddr, sizeof(servAddr));
 
@@ -42,12 +42,14 @@ int main(int argc, char const *argv[])
   }
   else
   {
-    char cleMsg[255] = "Message from the client, hello!";
+    printf("Waiting on message!");
+    char serMsg[255] = "Message from the client to the "
+                       "server \'Hello Cunt\' ";
     char strData[255];
+    send(sockD, serMsg, sizeof(serMsg), 0);
     recv(sockD, strData, sizeof(strData), 0);
-    printf("Message: %s\n", strData);
-    send(sockD, cleMsg, sizeof(cleMsg), 0);
 
+    printf("Message: %s\n", strData);
   }
 
   return 0;
