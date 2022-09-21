@@ -42,8 +42,9 @@ int Read_Options(int, char **);
 void *child(void *params);
 void matrix_to_identity(int p, int col, double pivalue);
 void matrix_elimination(int p, int row, int col, double multiplier);
-void parallel_find_inverse(int col);
-void start_parallel_inversion(void);
+void parallel_find_inverse();
+void *start_parallel_elimination(void *params);
+void *start_parallel_identity(void *params);
 
 int main(int argc, char **argv) {
   printf("Matrix Inverse\n");
@@ -58,9 +59,13 @@ int main(int argc, char **argv) {
   // find_inverse();
   // printf("Sequential done\n");
 
+  Init_Default();           /* Init default values      */
+  Read_Options(argc, argv); /* Read arguments   */
+  Init_Matrix();            /* Init the matrix  */
+
   // Parallel
   printf("Starting parallel\n");
-  start_parallel_inversion();
+  parallel_find_inverse();
   printf("Parallel done\n");
 
   // print
@@ -118,26 +123,6 @@ void *start_parallel_elimination(void *params) {
   return NULL;
 }
 
-void start_parallel_inversion() {
-  struct threadArgs *args;
-
-  pthread_t *children;
-  int id = 0;
-  pthread_barrier_init(&barrier, NULL, N);
-
-  children = malloc(N * sizeof(pthread_t));
-  for (id = 0; id < N; id++) {
-    args = malloc(sizeof(struct threadArgs));
-    args->id = id;
-    args->col = id;
-    pthread_create(&(children[id]), NULL, child, (void *)args);
-  }
-  for (id = 0; id < N; id++) {
-    pthread_join(children[id], NULL);
-  }
-  free(children);
-}
-
 void start_children(void *workerFunc, struct threadArgs *args) {
   pthread_t *children;
   int id = 0;
@@ -156,14 +141,15 @@ void start_children(void *workerFunc, struct threadArgs *args) {
   free(children);
 }
 
-void parallel_find_inverse(int col) {
+void parallel_find_inverse() {
   int row, p;     // 'p' stands for pivot (numbered from 0 to N-1)
   double pivalue; // pivot value
 
   /* Bringing the matrix A to the identity form */
   for (p = 0; p < N; p++) { /* Outer loop */
     pivalue = A[p][p];
-    // TODO: Code to start and join threads for matrix_to_identity.
+    // create thread args and start worker threads with matrix_to_identity
+    // function.
     struct threadArgs *identityArgs;
     identityArgs->pivalue = pivalue;
     identityArgs->p = p;
@@ -180,7 +166,8 @@ void parallel_find_inverse(int col) {
       multiplier = A[row][p];
       if (row != p) // Perform elimination on all except the current pivot row
       {
-        // TODO: Code to start and join threads for matrix_elimination.
+        // create thread args and start worker threads with matrix_elimination
+        // function.
         struct threadArgs *eliminationArgs;
         eliminationArgs->multiplier = multiplier;
         eliminationArgs->p = p;
