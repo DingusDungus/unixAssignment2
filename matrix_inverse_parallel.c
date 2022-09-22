@@ -6,10 +6,202 @@
 
 #include <assert.h>
 #include <pthread.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+// ==============================================
+//                 thread pool
+// ==============================================
+
+// define jobFunc type
+typedef void (*jobFunc)(void *params);
+
+// ==============
+// pool job item
+// ==============
+struct pool_job {
+  jobFunc func;
+  void *params;
+  struct pool_job *next; // linked list, next item
+};
+typedef struct pool_job pool_job_t;
+
+// ===========
+// thread pool
+// ===========
+struct thread_pool {
+  pool_job_t *head; // linked list first item
+  pool_job_t *tail; // linked list last item
+  pthread_mutex_t jobMutex;
+  pthread_cond_t signalJob;   // signals threads that there are jobs to be done.
+  pthread_cond_t signalNoJob; // signals that there are no threads working.
+  size_t activeThreads;       // number of actively working threads.
+  size_t aliveThreads;        // number of alive threads.
+  bool exit;
+};
+typedef struct thread_pool thread_pool_t;
+
+pool_job_t *poolJobCreate(jobFunc func, void *params) {
+  pool_job_t *job;
+
+  // null check
+  if (func == NULL) {
+    return NULL;
+  }
+
+  job = malloc(sizeof(pool_job_t));
+  job->func = func;
+  job->params = params;
+  job->next = NULL;
+
+  return job;
+}
+
+void poolJobFree(pool_job_t *job) {
+  // null check
+  if (job == NULL) {
+    return;
+  }
+  free(job);
+}
+
+pool_job_t *poolGetJob(thread_pool_t *tp) {
+  pool_job_t *job;
+
+  // null check
+  if (tp == NULL) {
+    return NULL;
+  }
+
+  // get item
+  job = tp->head;
+  // null check
+  if (job == NULL) {
+    return NULL;
+  }
+
+  // if next item is null, linked list is empty
+  if (job->next == NULL) {
+    tp->head = NULL;
+    tp->tail = NULL;
+  } else {
+    // first item in linked list becomse current items next
+    tp->head = job->next;
+  }
+
+  return job;
+}
+
+// does jobs from the job queue
+void *poolWorker(void *pool) {
+  thread_pool_t *tp = (thread_pool_t *)pool;
+  pool_job_t *job;
+
+  while (true) {
+    // lock mutex
+    pthread_mutex_lock(&(tp->jobMutex));
+
+    // check if linked list queue is empty,
+    // if exit is false wait on conditional wakeup when new a job is available.
+    // mutex is unlocked automatically by pthread_cond_wait,
+    // and then locked again when it gets signaled
+    while (tp->head == NULL && tp->exit == false) {
+      pthread_cond_wait(&(tp->signalJob), &(tp->jobMutex));
+    }
+
+    // stop worker thread if exit is true
+    if (tp->exit) {
+      break;
+    }
+
+    // get job and then unlock mutex
+    job = poolGetJob(tp);
+    tp->activeThreads++;
+    pthread_mutex_unlock(&(tp->jobMutex));
+
+    // if job is not null, do the job and destroy job item.
+    if (job != NULL) {
+      job->func(job->params);
+      poolJobFree(job);
+    }
+
+    // when job is done, or no job was found.
+    // lock mutex and decrement active working threads,
+    // if there are no active threads, send signal if someone is waiting.
+    // lastly unlocl mutex.
+    pthread_mutex_lock(&(tp->jobMutex));
+    tp->activeThreads--;
+    if (tp->exit == false && tp->activeThreads == 0 && tp->head == NULL) {
+      pthread_cond_signal(&(tp->signalNoJob));
+    }
+    pthread_mutex_unlock(&(tp->jobMutex));
+  }
+
+  // gracefully shutdown thread,
+  // unlocks mutex and sends a conditional signal.
+  // also decrement aliveThreads.
+  tp->aliveThreads--;
+  pthread_cond_signal(&(tp->signalNoJob));
+  pthread_mutex_unlock(&(tp->jobMutex));
+  return NULL;
+}
+
+thread_pool_t *poolInit(size_t nrOfThreads) {
+  thread_pool_t *tp;
+  pthread_t thread;
+
+  // if number of threads is less than 1, early return NULL.
+  if (nrOfThreads < 1) {
+    return NULL;
+  }
+
+  // allocate thread pool struct
+  tp = malloc(sizeof(thread_pool_t));
+  tp->aliveThreads = nrOfThreads;
+  tp->activeThreads = 0;
+  tp->exit = false;
+
+  // setup mutex and conditionals
+  pthread_mutex_init(&(tp->jobMutex), NULL);
+  pthread_cond_init(&(tp->signalJob), NULL);
+  pthread_cond_init(&(tp->signalNoJob), NULL);
+
+  // init linked list job queue
+  tp->head = NULL;
+  tp->tail = NULL;
+
+  // create threads
+  for (size_t i = 0; i < nrOfThreads; i++) {
+    pthread_create(&thread, NULL, poolWorker, tp);
+    pthread_detach(thread);
+  }
+
+  return tp;
+}
+
+// exit pool as soon as current active threads are done, even if there is more
+// jobs in the queue
+void poolKill(thread_pool_t *tp) {
+  pool_job_t *jobOne;
+  pool_job_t *jobTwo;
+
+  // null check
+  if (tp == NULL) {
+    return;
+  }
+
+  pthread_mutex_lock(&(tp->jobMutex));
+  jobOne = tp->head;
+  // TODO: kill/destroy function + the rest.
+}
+
+// ==============================================
+//               matrix inversion
+// ==============================================
 
 #define MAX_SIZE 4096
 
