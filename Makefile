@@ -6,8 +6,11 @@ cleanMatinv:
 cleanKmeans:
 	rm -f kmeans
 
+matinvDebug: cleanMatinv
+	gcc -Wall -w -lpthread -o matinv matrix_inverse_parallel.c -g
+
 matinv: cleanMatinv
-	gcc -Wall -w -O2 -lpthread -o matinv matrix_inverse.c
+	gcc -Wall -w -O2 -lpthread -o matinv matrix_inverse_parallel.c
 
 kmeans: cleanKmeans
 	gcc -Wall -w -O2 -lpthread -o kmeans kmeans.c

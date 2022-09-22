@@ -37,6 +37,7 @@
 *.hex
 matinv
 kmeans
+seqmatinv
 
 # Debug files
 *.dSYM/

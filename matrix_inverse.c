@@ -26,7 +26,7 @@ void find_inverse(void);
 void Init_Matrix(void);
 void Print_Matrix(matrix M, char name[]);
 void Init_Default(void);
-int Read_Options(int, char **);
+void Read_Options(int, char **);
 
 int main(int argc, char **argv) {
   printf("Matrix Inverse\n");
@@ -137,7 +137,7 @@ void Init_Default() {
   PRINT = 1;
 }
 
-int Read_Options(int argc, char **argv) {
+void Read_Options(int argc, char **argv) {
   char *prog;
 
   prog = *argv;
