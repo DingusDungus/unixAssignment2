@@ -42,11 +42,15 @@ int main(int argc, char const *argv[])
   }
   else
   {
+    int res;
     printf("Waiting on message!");
     char serMsg[255] = "Message from the client to the "
                        "server \'Hello Cunt\' ";
     char strData[255];
-    send(sockD, serMsg, sizeof(serMsg), 0);
+    if (res = send(sockD, serMsg, sizeof(serMsg), 0) == -1)
+    {
+      printf("Failed to send\n");
+    }
     recv(sockD, strData, sizeof(strData), 0);
 
     printf("Message: %s\n", strData);

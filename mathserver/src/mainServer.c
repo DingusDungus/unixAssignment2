@@ -35,7 +35,7 @@ int mainServer(int *clientSocket, struct options *serverOpts)
     }
     else if (serverOpts->muxbasic)
     {
-        res = muxBasic(clientSocket, servAddr, servSockD, serverOpts->port);
+        res = muxBasic(servAddr, servSockD, serverOpts->port);
         if (res != 0)
         {
             return res;
