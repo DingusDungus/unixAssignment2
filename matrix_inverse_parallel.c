@@ -349,12 +349,9 @@ void Init_Matrix(void);
 void Print_Matrix(matrix M, char name[]);
 void Init_Default(void);
 void Read_Options(int, char **);
-void *child(void *params);
-void matrix_to_identity(int p, int col, double pivalue);
-void matrix_elimination(int p, int row, int col, double multiplier);
+void matrix_identity_job(void *params);
+void matrix_elimination_job(void *params);
 void parallel_find_inverse(thread_pool_t *pool);
-void *start_parallel_elimination(void *params);
-void *start_parallel_identity(void *params);
 
 static const size_t NR_OF_THREADS = 8;
 
