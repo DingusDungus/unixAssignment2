@@ -377,7 +377,7 @@ int main(int argc, char **argv) {
   poolKill(pool); // kill pool when inverse is done.
 
   // print
-  if (PRINT == 1) {
+  if (PRINT == 1 || PRINT == 2) {
     Print_Matrix(A, "End: Input");
     Print_Matrix(I, "Inversed");
   }
