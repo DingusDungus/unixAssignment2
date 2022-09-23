@@ -368,12 +368,7 @@ int main(int argc, char **argv) {
   Read_Options(argc, argv); /* Read arguments   */
   Init_Matrix();            /* Init the matrix  */
 
-  // Sequential
-  // printf("Starting Sequential\n");
-  // find_inverse();
-  // printf("Sequential done\n");
-
-  // Parallel
+  // Parallel inversion
   // create pool stuff
   thread_pool_t *pool;
   pool = poolInit(NR_OF_THREADS);
