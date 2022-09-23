@@ -51,8 +51,6 @@ void find_inverse() {
   for (p = 0; p < N; p++) { /* Outer loop */
     pivalue = A[p][p];
     for (col = 0; col < N; col++) {
-      printf("matrix_to_identity: p: %d, col: %d, pivalue: %f\n", p, col,
-             pivalue);
       A[p][col] = A[p][col] / pivalue; /* Division step on A */
       I[p][col] = I[p][col] / pivalue; /* Division step on I */
     }
@@ -64,9 +62,6 @@ void find_inverse() {
       if (row != p) // Perform elimination on all except the current pivot row
       {
         for (col = 0; col < N; col++) {
-          printf(
-              "matrix_elimination: p: %d, row: %d, col: %d, multiplier: %f\n",
-              p, row, col, multiplier);
           A[row][col] =
               A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
           I[row][col] =

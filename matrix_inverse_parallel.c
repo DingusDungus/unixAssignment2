@@ -13,6 +13,12 @@
 #include <string.h>
 #include <time.h>
 
+// if (PRINT == 1), prints matrixes.
+// if (PRINT == 2), prints matrixes + debug info.
+int PRINT; /* print switch               */
+
+// TODO: clean up comments and code etc. + remove debug printf's.
+
 // ==============================================
 //                 thread pool
 // ==============================================
@@ -183,7 +189,10 @@ thread_pool_t *poolInit(size_t nrOfThreads) {
   tp->threads = malloc(nrOfThreads * sizeof(pthread_t));
   for (int id = 0; id < nrOfThreads; id++) {
     pthread_create(&(tp->threads[id]), NULL, poolWorker, tp);
-    printf("created thread %d\n", id);
+    // if PRINT == 2, print debug info
+    if (PRINT == 2) {
+      printf("created thread %d\n", id);
+    }
   }
 
   return tp;
@@ -225,7 +234,7 @@ bool poolAddJob(thread_pool_t *tp, jobFunc func, void *params) {
   return true;
 }
 
-// wait for all active jovs to finish or if exit is true, all threads to be
+// wait for all active jobs to finish or if exit is true, all threads to be
 // killed.
 void poolBarrierWait(thread_pool_t *tp) {
   // TODO:
@@ -283,10 +292,14 @@ void poolKill(thread_pool_t *tp) {
   // and then for all threads to be killed.
   poolBarrierWait(tp);
   for (int id = 0; id < tp->nrOfThreads; id++) {
-    printf("waiting to join thread %d\n", id);
+    if (PRINT == 2) {
+      printf("waiting to join thread %d\n", id);
+    }
     pthread_join(tp->threads[id], NULL);
   }
-  printf("all threads joined, freeing threads array\n");
+  if (PRINT == 2) {
+    printf("all threads joined, freeing threads array\n");
+  }
   free(tp->threads);
 
   // free mutex and conditionals.
@@ -308,7 +321,6 @@ typedef double matrix[MAX_SIZE][MAX_SIZE];
 int N;            /* matrix size                */
 int maxnum;       /* max number of element*/
 char *Init;       /* matrix init type   */
-int PRINT;        /* print switch               */
 matrix A;         /* matrix A           */
 matrix I = {0.0}; /* The A inverse matrix, which will be initialized to the
                      identity matrix */
@@ -344,7 +356,7 @@ void parallel_find_inverse(thread_pool_t *pool);
 void *start_parallel_elimination(void *params);
 void *start_parallel_identity(void *params);
 
-static const size_t NR_OF_THREADS = 2;
+static const size_t NR_OF_THREADS = 8;
 
 int main(int argc, char **argv) {
   setbuf(stdout, NULL);
@@ -376,88 +388,17 @@ int main(int argc, char **argv) {
   }
 }
 
-void *child(void *params) {
-  struct threadArgs *args = (struct threadArgs *)params;
-  int id = args->id;
-  int p = args->p;
-  int col = args->col;
-  int row = args->row;
-  double pivalue = args->pivalue;
-  double multiplier = args->multiplier;
-  // printf("Proccess %d starting work...\n", id);
-  matrix_to_identity(p, id, pivalue);
-  // pthread_barrier_wait(&barrier);
-  free(args);
-  // printf("Proccess %d done and freed.\n", id);
-  return NULL;
-}
-
-void *start_parallel_identity(void *params) {
-  struct threadArgs *args = (struct threadArgs *)params;
-  int id = args->id;
-  int p = args->p;
-  int col = args->col;
-  int row = args->row;
-  double pivalue = args->pivalue;
-  double multiplier = args->multiplier;
-  // printf("Proccess %d starting work...\n", id);
-  matrix_to_identity(p, id, pivalue);
-  free(args);
-  // printf("Proccess %d done and freed.\n", id);
-  return NULL;
-}
-
-void *start_parallel_elimination(void *params) {
-  struct threadArgs *args = (struct threadArgs *)params;
-  int id = args->id;
-  int p = args->p;
-  int col = args->col;
-  int row = args->row;
-  double pivalue = args->pivalue;
-  double multiplier = args->multiplier;
-  // printf("Proccess %d starting work...\n", id);
-  matrix_elimination(p, row, col, multiplier);
-  free(args);
-  // printf("Proccess %d done and freed.\n", id);
-  return NULL;
-}
-
-void start_children(void *workerFunc, struct threadArgs *threadArgs) {
-  // printf("start: start_children\n");
-  struct threadArgs *args;
-  pthread_t *children;
-  int id = 0;
-  pthread_barrier_init(&barrier, NULL, N);
-
-  children = malloc(N * sizeof(pthread_t));
-  for (id = 0; id < N; id++) {
-    args = malloc(sizeof(struct threadArgs));
-    args->id = id;
-    args->p = threadArgs->p;
-    args->col = id;
-    args->row = threadArgs->row;
-    args->pivalue = threadArgs->pivalue;
-    args->multiplier = threadArgs->multiplier;
-    pthread_create(&(children[id]), NULL, workerFunc, (void *)args);
-    // printf("created thread(col) %d, p: %d, row: %d\n", id, args->p,
-    // args->row);
-  }
-  for (id = 0; id < N; id++) {
-    pthread_join(children[id], NULL);
-    // printf("joined thread(col) %d, p: %d, row: %d\n", id, args->p,
-    // threadArgs->row);
-  }
-  free(children);
-  free(threadArgs);
-  // printf("end: start_children\n");
-}
-
 void matrix_identity_job(void *params) {
   struct jobArgs *args = (struct jobArgs *)params;
   int p = args->p;
   int col = args->col;
   double pivalue = args->pivalue;
-  printf("matrix_to_identity: p: %d, col: %d, pivalue: %f\n", p, col, pivalue);
+
+  // debug print if PRINT == 2
+  if (PRINT == 2) {
+    printf("matrix_to_identity: p: %d, col: %d, pivalue: %f\n", p, col,
+           pivalue);
+  }
 
   // job
   A[p][col] = A[p][col] / pivalue; /* Division step on A */
@@ -472,8 +413,13 @@ void matrix_elimination_job(void *params) {
   int col = args->col;
   int row = args->row;
   double multiplier = args->multiplier;
-  printf("matrix_elimination: p: %d, row: %d, col: %d, multiplier: %f\n", p,
-         row, col, multiplier);
+
+  // debug print if PRINT == 2
+  if (PRINT == 2) {
+    printf("matrix_elimination: p: %d, row: %d, col: %d, multiplier: %f\n", p,
+           row, col, multiplier);
+  }
+
   // job
   A[row][col] =
       A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
@@ -500,7 +446,7 @@ void parallel_find_inverse(thread_pool_t *pool) {
       poolAddJob(pool, matrix_identity_job, identityArgs);
     }
     poolBarrierWait(pool);
-    // assert(A[p][p] == 1.0);
+    assert(A[p][p] == 1.0);
 
     // Elimination
     double multiplier;
@@ -519,26 +465,10 @@ void parallel_find_inverse(thread_pool_t *pool) {
           poolAddJob(pool, matrix_elimination_job, eliminationArgs);
         }
         poolBarrierWait(pool);
-        // assert(A[row][p] == 0.0);
+        assert(A[row][p] == 0.0);
       }
     }
   }
-}
-
-void matrix_to_identity(int p, int col, double pivalue) {
-  // printf("matrix_to_identity: p: %d, col: %d, pivalue: %f\n", p, col,
-  // pivalue);
-  A[p][col] = A[p][col] / pivalue; /* Division step on A */
-  I[p][col] = I[p][col] / pivalue; /* Division step on I */
-}
-
-void matrix_elimination(int p, int row, int col, double multiplier) {
-  // printf("matrix_elimination: p: %d, row: %d, col: %d, multiplier: %f\n", p,
-  // row, col, multiplier);
-  A[row][col] =
-      A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
-  I[row][col] =
-      I[row][col] - I[p][col] * multiplier; /* Elimination step on I */
 }
 
 void Init_Matrix() {
