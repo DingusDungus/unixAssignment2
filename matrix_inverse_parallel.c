@@ -237,6 +237,7 @@ void poolBarrierWait(thread_pool_t *tp) {
   pthread_mutex_lock(&(tp->jobMutex));
   // wait for all active threads to finish their jobs.
   // or if exit is true, wait for all threads to be killed.
+  // also makes sure that the job queue is completly empty before returning.
   // mutex is unlocked automatically by pthread_cond_wait,
   // and then locked again when it gets signaled
   while (true) {
