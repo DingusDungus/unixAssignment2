@@ -107,7 +107,7 @@ int muxBasic(struct sockaddr_in servAddr, int servSockD, int port)
                 // If there are no events on this descriptor, continue to next
                 continue;
             }
-            if (fds[i].fd = -1)
+            if (fds[i].fd == -1)
             {
                 // This descriptor is marked for removal
                 continue;
@@ -119,17 +119,11 @@ int muxBasic(struct sockaddr_in servAddr, int servSockD, int port)
                 {
                     continue;
                 }
-                /*
-                if (res == 0)
-                {
-                    printf("Client closed connection\n");
-                    // Clear and shift
-                    fds[i].fd = -1;
-                    continue;
-                }
-                */
                 printf("Message: %s", clientBuf);
                 res = send(fds[i].fd, sendBuf, sizeof(sendBuf), 0);
+                // Closes connection
+                close(fds[i].fd);
+                fds[i].fd = -1;
             }
         }
     }
