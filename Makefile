@@ -14,3 +14,6 @@ matinv: cleanMatinv
 
 kmeans: cleanKmeans
 	gcc -Wall -w -O2 -pthread -o kmeans kmeans-parallel.c
+
+check-kmeans:
+	git diff --no-index kmeans-results-correct.txt kmeans-results.txt

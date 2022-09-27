@@ -38,6 +38,7 @@
 matinv
 kmeans
 seqmatinv
+seqkmeans
 
 # Debug files
 *.dSYM/

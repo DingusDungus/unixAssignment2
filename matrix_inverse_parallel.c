@@ -198,7 +198,6 @@ thread_pool_t *poolInit(size_t nrOfThreads) {
 
 // adds a job to the joblist queue
 bool poolAddJob(thread_pool_t *tp, jobFunc func, void *params) {
-  // TODO:
   pool_job_t *job;
 
   // null check for the pool
@@ -235,7 +234,6 @@ bool poolAddJob(thread_pool_t *tp, jobFunc func, void *params) {
 // wait for all active jobs to finish or if exit is true, all threads to be
 // killed.
 void poolBarrierWait(thread_pool_t *tp) {
-  // TODO:
   // null check
   if (tp == NULL) {
     return;
