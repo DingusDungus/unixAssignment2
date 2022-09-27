@@ -1,17 +1,9 @@
-/***************************************************************************
- *
- * Sequential version of Matrix Inverse
- * An adapted version of the code by Hkan Grahn
- ***************************************************************************/
-
-#include <assert.h>
+#include <limits.h>
+#include <math.h>
 #include <pthread.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
 // if (PRINT == 1), prints matrixes.
 // if (PRINT == 2), prints matrixes + debug info.
@@ -306,221 +298,143 @@ void poolKill(thread_pool_t *tp) {
   free(tp); // lastly free the pool
 }
 
-// ==============================================
-//               matrix inversion
-// ==============================================
+#define MAX_POINTS 4096
+#define MAX_CLUSTERS 32
 
-#define MAX_SIZE 4096
+typedef struct point {
+  float x;     // The x-coordinate of the point
+  float y;     // The y-coordinate of the point
+  int cluster; // The cluster that the point belongs to
+} point;
 
-typedef double matrix[MAX_SIZE][MAX_SIZE];
+char *fileName = NULL;       // name of input file
+int N;                       // number of entries in the data
+int k = 0;                   // number of centroids
+point data[MAX_POINTS];      // Data coordinates
+point cluster[MAX_CLUSTERS]; // The coordinates of each cluster center (also
+                             // called centroid)
 
-int N;            /* matrix size                */
-int maxnum;       /* max number of element*/
-char *Init;       /* matrix init type   */
-matrix A;         /* matrix A           */
-matrix I = {0.0}; /* The A inverse matrix, which will be initialized to the
-                     identity matrix */
-
-pthread_barrier_t barrier;
-struct threadArgs {
-  int id;
-  int p;
-  int col;
-  int row;
-  double pivalue;
-  double multiplier;
-};
-
-struct jobArgs {
-  int p;
-  int col;
-  int row;
-  double pivalue;
-  double multiplier;
-};
-
-/* forward declarations */
-void find_inverse(void);
-void Init_Matrix(void);
-void Print_Matrix(matrix M, char name[]);
-void Init_Default(void);
-void Read_Options(int, char **);
-void matrix_identity_job(void *params);
-void matrix_elimination_job(void *params);
-void parallel_find_inverse(thread_pool_t *pool);
-
-static const size_t NR_OF_THREADS = 8;
-
-int main(int argc, char **argv) {
-  setbuf(stdout, NULL);
-  setbuf(stderr, NULL);
-  printf("Matrix Inverse\n");
-  int i, timestart, timeend, iter;
-
-  Init_Default();           /* Init default values      */
-  Read_Options(argc, argv); /* Read arguments   */
-  Init_Matrix();            /* Init the matrix  */
-
-  // Parallel inversion
-  // create pool stuff
-  thread_pool_t *pool;
-  pool = poolInit(NR_OF_THREADS);
-  parallel_find_inverse(pool);
-  poolBarrierWait(pool);
-  poolKill(pool); // kill pool when inverse is done.
-
-  // print
-  if (PRINT == 1 || PRINT == 2) {
-    Print_Matrix(A, "End: Input");
-    Print_Matrix(I, "Inversed");
+void read_data() {
+  // init values if nothing was provided via the command-line flags.
+  if (fileName == NULL) {
+    fileName = "kmeans-data/kmeans-data.txt";
+    printf("No filename provided, reading default file: %s\n", fileName);
   }
-}
-
-void matrix_identity_job(void *params) {
-  struct jobArgs *args = (struct jobArgs *)params;
-  int p = args->p;
-  int col = args->col;
-  double pivalue = args->pivalue;
-
-  // debug print if PRINT == 2
-  if (PRINT == 2) {
-    printf("matrix_to_identity: p: %d, col: %d, pivalue: %f\n", p, col,
-           pivalue);
+  if (k == 0) {
+    k = 9;
+    printf("No k value provided, set k to default: %d\n", k);
+    printf("================================");
+    printf(" Kmeans ");
+    printf("================================\n");
   }
-
-  // job
-  A[p][col] = A[p][col] / pivalue; /* Division step on A */
-  I[p][col] = I[p][col] / pivalue; /* Division step on I */
-
-  free(args);
-}
-
-void matrix_elimination_job(void *params) {
-  struct jobArgs *args = (struct jobArgs *)params;
-  int p = args->p;
-  int col = args->col;
-  int row = args->row;
-  double multiplier = args->multiplier;
-
-  // debug print if PRINT == 2
-  if (PRINT == 2) {
-    printf("matrix_elimination: p: %d, row: %d, col: %d, multiplier: %f\n", p,
-           row, col, multiplier);
+  // open file
+  FILE *fp = fopen(fileName, "r");
+  if (fp == NULL) {
+    perror("Cannot open the file");
+    exit(EXIT_FAILURE);
   }
-
-  // job
-  A[row][col] =
-      A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
-  I[row][col] =
-      I[row][col] - I[p][col] * multiplier; /* Elimination step on I */
-
-  free(args);
-}
-
-void parallel_find_inverse(thread_pool_t *pool) {
-  int row, col, p; // 'p' stands for pivot (numbered from 0 to N-1)
-  double pivalue;  // pivot value
-
-  /* Bringing the matrix A to the identity form */
-  for (p = 0; p < N; p++) { /* Outer loop */
-    pivalue = A[p][p];
-    // add jobs to job queue column wise
-    struct jobArgs *identityArgs;
-    for (col = 0; col < N; col++) {
-      identityArgs = malloc(sizeof(struct jobArgs));
-      identityArgs->p = p;
-      identityArgs->col = col;
-      identityArgs->pivalue = pivalue;
-      poolAddJob(pool, matrix_identity_job, identityArgs);
+  // Initialize points from the data file
+  float temp;
+  int i = 0;
+  char ch;
+  while (true) {
+    ch = fscanf(fp, "%f %f", &data[i].x, &data[i].y);
+    if (ch == EOF) {
+      break;
     }
-    poolBarrierWait(pool);
-    assert(A[p][p] == 1.0);
+    data[i].cluster = -1; // Initialize the cluster number to -1
+    i++;
+  }
+  N = i; // set number of entries in data.
+  printf("Read the problem data!\n");
+  printf("number of entries: %d\n", N);
+  // Initialize centroids randomly
+  srand(0); // Setting 0 as the random number generation seed
+  for (int i = 0; i < k; i++) {
+    int r = rand() % N;
+    cluster[i].x = data[r].x;
+    cluster[i].y = data[r].y;
+  }
+  fclose(fp);
+}
 
-    // Elimination
-    double multiplier;
-    for (row = 0; row < N; row++) {
-      multiplier = A[row][p];
-      if (row != p) // Perform elimination on all except the current pivot row
-      {
-        // add jobs to job queue column wise
-        struct jobArgs *eliminationArgs;
-        for (col = 0; col < N; col++) {
-          eliminationArgs = malloc(sizeof(struct jobArgs));
-          eliminationArgs->p = p;
-          eliminationArgs->row = row;
-          eliminationArgs->col = col;
-          eliminationArgs->multiplier = multiplier;
-          poolAddJob(pool, matrix_elimination_job, eliminationArgs);
-        }
-        poolBarrierWait(pool);
-        assert(A[row][p] == 0.0);
-      }
+int get_closest_centroid(int i, int k) {
+  /* find the nearest centroid */
+  int nearest_cluster = -1;
+  double xdist, ydist, dist, min_dist;
+  min_dist = dist = INT_MAX;
+  for (int c = 0; c < k; c++) { // For each centroid
+    // Calculate the square of the Euclidean distance between that centroid and
+    // the point
+    xdist = data[i].x - cluster[c].x;
+    ydist = data[i].y - cluster[c].y;
+    dist = xdist * xdist + ydist * ydist; // The square of Euclidean distance
+    // printf("%.2lf \n", dist);
+    if (dist <= min_dist) {
+      min_dist = dist;
+      nearest_cluster = c;
     }
   }
+  // printf("-----------\n");
+  return nearest_cluster;
 }
 
-void Init_Matrix() {
-  int row, col;
-
-  // Set the diagonal elements of the inverse matrix to 1.0
-  // So that you get an identity matrix to begin with
-  for (row = 0; row < N; row++) {
-    for (col = 0; col < N; col++) {
-      if (row == col)
-        I[row][col] = 1.0;
+bool assign_clusters_to_points(thread_pool_t *pool) {
+  bool something_changed = false;
+  int old_cluster = -1, new_cluster = -1;
+  for (int i = 0; i < N; i++) { // For each data point
+    old_cluster = data[i].cluster;
+    new_cluster = get_closest_centroid(i, k);
+    data[i].cluster = new_cluster; // Assign a cluster to the point i
+    if (old_cluster != new_cluster) {
+      something_changed = true;
     }
   }
+  return something_changed;
+}
 
-  printf("\nsize      = %dx%d ", N, N);
-  printf("\nmaxnum    = %d \n", maxnum);
-  printf("Init    = %s \n", Init);
-  printf("Initializing matrix...");
+void update_cluster_centers(thread_pool_t *pool) {
+  /* Update the cluster centers */
+  int c;
+  int count[MAX_CLUSTERS] = {
+      0}; // Array to keep track of the number of points in each cluster
+  point temp[MAX_CLUSTERS] = {0.0};
 
-  if (strcmp(Init, "rand") == 0) {
-    for (row = 0; row < N; row++) {
-      for (col = 0; col < N; col++) {
-        if (row == col) /* diagonal dominance */
-          A[row][col] = (double)(rand() % maxnum) + 5.0;
-        else
-          A[row][col] = (double)(rand() % maxnum) + 1.0;
-      }
-    }
+  for (int i = 0; i < N; i++) {
+    c = data[i].cluster;
+    count[c]++;
+    temp[c].x += data[i].x;
+    temp[c].y += data[i].y;
   }
-  if (strcmp(Init, "fast") == 0) {
-    for (row = 0; row < N; row++) {
-      for (col = 0; col < N; col++) {
-        if (row == col) /* diagonal dominance */
-          A[row][col] = 5.0;
-        else
-          A[row][col] = 2.0;
-      }
-    }
-  }
-
-  printf("done \n\n");
-  if (PRINT == 1) {
-    // Print_Matrix(A, "Begin: Input");
-    // Print_Matrix(I, "Begin: Inverse");
+  for (int i = 0; i < k; i++) {
+    cluster[i].x = temp[i].x / count[i];
+    cluster[i].y = temp[i].y / count[i];
   }
 }
 
-void Print_Matrix(matrix M, char name[]) {
-  int row, col;
-
-  printf("%s Matrix:\n", name);
-  for (row = 0; row < N; row++) {
-    for (col = 0; col < N; col++)
-      printf(" %5.2f", M[row][col]);
-    printf("\n");
-  }
-  printf("\n\n");
+void kmeans(int k, thread_pool_t *pool) {
+  bool somechange;
+  int iter = 0;
+  do {
+    iter++; // Keep track of number of iterations
+    somechange = assign_clusters_to_points(pool);
+    update_cluster_centers(pool);
+  } while (somechange);
+  printf("Number of iterations taken = %d\n", iter);
+  printf("Computed cluster numbers successfully!\n");
 }
 
-void Init_Default() {
-  N = 5;
-  Init = "fast";
-  maxnum = 15.0;
-  PRINT = 1;
+void write_results() {
+  FILE *fp = fopen("kmeans-results.txt", "w");
+  if (fp == NULL) {
+    perror("Cannot open the file");
+    exit(EXIT_FAILURE);
+  } else {
+    for (int i = 0; i < N; i++) {
+      fprintf(fp, "%.2f %.2f %d\n", data[i].x, data[i].y, data[i].cluster);
+    }
+  }
+  printf("Wrote the results to a file!\n");
 }
 
 void Read_Options(int argc, char **argv) {
@@ -530,9 +444,9 @@ void Read_Options(int argc, char **argv) {
   while (++argv, --argc > 0)
     if (**argv == '-')
       switch (*++*argv) {
-      case 'n':
+      case 'k':
         --argc;
-        N = atoi(*++argv);
+        k = atoi(*++argv);
         break;
       case 'h':
         printf("\nHELP: try matinv -u \n\n");
@@ -547,20 +461,9 @@ void Read_Options(int argc, char **argv) {
           [-P print_switch] 0/1 \n");
         exit(0);
         break;
-      case 'D':
-        printf("\nDefault:  n         = %d ", N);
-        printf("\n          Init      = rand");
-        printf("\n          maxnum    = 5 ");
-        printf("\n          P         = 0 \n\n");
-        exit(0);
-        break;
-      case 'I':
+      case 'f':
         --argc;
-        Init = *++argv;
-        break;
-      case 'm':
-        --argc;
-        maxnum = atoi(*++argv);
+        fileName = *++argv;
         break;
       case 'P':
         --argc;
@@ -571,4 +474,18 @@ void Read_Options(int argc, char **argv) {
         printf("HELP: try %s -u \n\n", prog);
         break;
       }
+}
+
+static const size_t NR_OF_THREADS = 8;
+
+int main(int argc, char **argv) {
+  Read_Options(argc, argv);
+  read_data();
+  // create pool stuff
+  thread_pool_t *pool;
+  pool = poolInit(NR_OF_THREADS);
+  kmeans(k, pool);       // run kmeans
+  poolBarrierWait(pool); // wait for jobs to be done and threads to finish.
+  poolKill(pool);        // kill pool when inverse is done.
+  write_results();
 }
