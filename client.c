@@ -5,6 +5,11 @@
 #include <sys/socket.h> // for socket APIs
 #include <sys/types.h>
 
+int getMatinvInp(char **argv)
+{
+  
+}
+
 int main(int argc, char const *argv[])
 {
   // get port for server
@@ -31,7 +36,7 @@ int main(int argc, char const *argv[])
   servAddr.sin_family = AF_INET;
   servAddr.sin_port = htons(PORT_NUMBER);
   servAddr.sin_addr.s_addr = SERVER_ADDRESS.s_addr;
-  printf("Connecting to %d", SERVER_ADDRESS.s_addr);
+  printf("Connecting to %d\n", SERVER_ADDRESS.s_addr);
 
   int connectStatus =
       connect(sockD, (struct sockaddr *)&servAddr, sizeof(servAddr));
@@ -43,16 +48,29 @@ int main(int argc, char const *argv[])
   else
   {
     int res;
-    printf("Waiting on message!");
-    char serMsg[255] = "Message from the client to the "
-                       "server \'Hello Cunt\' ";
-    char strData[255];
-    if (res = send(sockD, serMsg, sizeof(serMsg), 0) == -1)
+    char serMsg[255];
+    char sendData[10][100];
+    char strData[1024];
+    int dataIteration = 0;
+
+    recv(sockD, strData, sizeof(strData), 0);
+    printf("%s\n", strData);
+    fflush(stdin);
+
+    scanf("%s", sendData[dataIteration]);
+    dataIteration++;
+    while (scanf("%s", sendData[dataIteration]) != EOF)
+    {
+      printf("%s\n", sendData[dataIteration]);
+      dataIteration++;
+    }
+    printf("Sending!\n");
+
+    if (res = send(sockD, sendData, sizeof(sendData), 0) == -1)
     {
       printf("Failed to send\n");
     }
     recv(sockD, strData, sizeof(strData), 0);
-
     printf("Message: %s\n", strData);
   }
 

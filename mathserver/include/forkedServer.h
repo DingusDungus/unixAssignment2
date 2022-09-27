@@ -8,6 +8,8 @@
 #include <sys/socket.h> // for socket APIs
 #include <sys/types.h>
 
+#include "calculationProcessAPI.h"
+
 int forkedServer(int *clientSocket);
 
 #endif
