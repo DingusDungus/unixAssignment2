@@ -321,7 +321,6 @@ matrix A;         /* matrix A           */
 matrix I = {0.0}; /* The A inverse matrix, which will be initialized to the
                      identity matrix */
 
-pthread_barrier_t barrier;
 struct threadArgs {
   int id;
   int p;
