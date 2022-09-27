@@ -13,4 +13,4 @@ matinv: cleanMatinv
 	gcc -Wall -w -O2 -pthread -o matinv matrix_inverse_parallel.c
 
 kmeans: cleanKmeans
-	gcc -Wall -w -O2 -pthread -o kmeans kmeans.c
+	gcc -Wall -w -O2 -pthread -o kmeans kmeans-parallel.c

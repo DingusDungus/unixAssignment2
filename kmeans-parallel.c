@@ -13,13 +13,15 @@ typedef struct point {
   int cluster; // The cluster that the point belongs to
 } point;
 
+char *fileName = NULL;       // name of input file
 int N;                       // number of entries in the data
-int k;                       // number of centroids
+int k = 0;                   // number of centroids
 point data[MAX_POINTS];      // Data coordinates
 point cluster[MAX_CLUSTERS]; // The coordinates of each cluster center (also
                              // called centroid)
 
 void read_data() {
+
   N = 1797;
   k = 9;
   FILE *fp = fopen("kmeans-data/kmeans-data.txt", "r");
@@ -99,7 +101,7 @@ void update_cluster_centers() {
   }
 }
 
-int kmeans(int k) {
+void kmeans(int k) {
   bool somechange;
   int iter = 0;
   do {
@@ -124,8 +126,50 @@ void write_results() {
   printf("Wrote the results to a file!\n");
 }
 
-int main() {
+int main(int argc, char **argv) {
   read_data();
   kmeans(k);
   write_results();
+}
+
+void Read_Options(int argc, char **argv) {
+  char *prog;
+
+  prog = *argv;
+  while (++argv, --argc > 0)
+    if (**argv == '-')
+      switch (*++*argv) {
+      case 'k':
+        --argc;
+        k = atoi(*++argv);
+        break;
+      case 'h':
+        printf("\nHELP: try matinv -u \n\n");
+        exit(0);
+        break;
+      case 'u':
+        printf("\nUsage: matinv [-n problemsize]\n \
+          [-D] show default values \n \
+          [-h] help \n \
+          [-I init_type] fast/rand \n \
+          [-m maxnum] max random no \n \
+          [-P print_switch] 0/1 \n");
+        exit(0);
+        break;
+      case 'D':
+        printf("\nDefault:  n         = %d ", N);
+        printf("\n          Init      = rand");
+        printf("\n          maxnum    = 5 ");
+        printf("\n          P         = 0 \n\n");
+        exit(0);
+        break;
+      case 'f':
+        --argc;
+        fileName = *++argv;
+        break;
+      default:
+        printf("%s: ignored option: -%s\n", prog, *argv);
+        printf("HELP: try %s -u \n\n", prog);
+        break;
+      }
 }
