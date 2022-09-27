@@ -22,7 +22,6 @@ point cluster[MAX_CLUSTERS]; // The coordinates of each cluster center (also
 
 void read_data() {
 
-  N = 1797;
   k = 9;
   FILE *fp = fopen("kmeans-data/kmeans-data.txt", "r");
   if (fp == NULL) {
@@ -32,11 +31,19 @@ void read_data() {
 
   // Initialize points from the data file
   float temp;
-  for (int i = 0; i < N; i++) {
-    fscanf(fp, "%f %f", &data[i].x, &data[i].y);
+  int i = 0;
+  char c;
+  while (true) {
+    c = fscanf(fp, "%f %f", &data[i].x, &data[i].y);
+    if (c == EOF) {
+      break;
+    }
     data[i].cluster = -1; // Initialize the cluster number to -1
+    i++;
   }
+  N = i; // set number of entries in data.
   printf("Read the problem data!\n");
+  printf("number of entries: %d\n", N);
   // Initialize centroids randomly
   srand(0); // Setting 0 as the random number generation seed
   for (int i = 0; i < k; i++) {
