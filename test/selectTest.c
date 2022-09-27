@@ -23,10 +23,12 @@ int main() {
   if (err == 0) // Timeout
   {
     printf("select timeout!\n");
-  } else if (err == -1) // Failure
+  } 
+  else if (err == -1) // Failure
   {
     printf("fail to select!\n");
-  } else // Successful
+  } 
+  else // Successful
   {
     printf("data is available!\n");
   }

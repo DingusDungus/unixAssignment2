@@ -11,13 +11,13 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#include <sys/select.h>
-#include <sys/time.h>
+#include <sys/ioctl.h>
+#include <sys/poll.h>
 
 #include "forkedServer.h"
 
 int forkStrategy(int *clientSocket, struct sockaddr_in servAddr, int servSockD, int port);
 
-int muxBasic(int *clientSocket, struct sockaddr_in servAddr, int servSockD, int port);
+int muxBasic(struct sockaddr_in servAddr, int servSockD, int port);
 
 #endif
