@@ -17,8 +17,6 @@
 // if (PRINT == 2), prints matrixes + debug info.
 int PRINT; /* print switch               */
 
-// TODO: clean up comments and code etc. + remove debug printf's.
-
 // ==============================================
 //                 thread pool
 // ==============================================
