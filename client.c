@@ -4,10 +4,51 @@
 #include <stdlib.h>
 #include <sys/socket.h> // for socket APIs
 #include <sys/types.h>
+#include <string.h>
+#include <unistd.h>
 
-int getMatinvInp(char **argv)
+void getMatinvInp(char **argv, char *sendString)
 {
-  
+  fflush(stdin);
+
+  printf("Input for matinv:\n");
+  printf("Size of array: ");
+  scanf("%s", argv[2]);
+  argv[1] = "-n";
+  fflush(stdin);
+
+  printf("Number of parallel threads: ");
+  scanf("%s", argv[4]);
+  argv[3] = "-P";
+  fflush(stdin);
+
+  printf("Type of generation [rand || fast]: ");
+  scanf("%s", argv[6]);
+  argv[5] = "-I";
+  fflush(stdin);
+
+  // copies into a sendstring
+  int stringIndex = 0;
+  for (int y = 0; y < 10; y++)
+  {
+    for (int x = 0; x < 100 && argv[y][x] != '\0' && argv[y][x] != '\n'; x++)
+    {
+      sendString[stringIndex] = argv[y][x];
+      stringIndex++;
+    }
+    sendString[stringIndex] = ' ';
+    stringIndex++;
+  }
+  sendString[stringIndex] = '\0';
+  stringIndex++;
+}
+
+void printData(char **argv, int argc)
+{
+  for (int i = 0; i < argc; i++)
+  {
+    printf("%s\n", argv[i]);
+  }
 }
 
 int main(int argc, char const *argv[])
@@ -48,30 +89,27 @@ int main(int argc, char const *argv[])
   else
   {
     int res;
-    char serMsg[255];
-    char sendData[10][100];
-    char strData[1024];
+    char sendData[100] = "";
+    char *temp = NULL;
+    char recvData[1024];
     int dataIteration = 0;
 
-    recv(sockD, strData, sizeof(strData), 0);
-    printf("%s\n", strData);
+    recv(sockD, recvData, sizeof(recvData), 0);
+    printf("%s\n", recvData);
+
     fflush(stdin);
-
-    scanf("%s", sendData[dataIteration]);
-    dataIteration++;
-    while (scanf("%s", sendData[dataIteration]) != EOF)
-    {
-      printf("%s\n", sendData[dataIteration]);
-      dataIteration++;
-    }
-    printf("Sending!\n");
-
+    size_t len = 0;
+    ssize_t lineSize = 0;
+    lineSize = getline(&temp, &len, stdin);
+    strcpy(sendData, temp);
+    printf("%s\n", sendData);
+    
     if (res = send(sockD, sendData, sizeof(sendData), 0) == -1)
     {
       printf("Failed to send\n");
     }
-    recv(sockD, strData, sizeof(strData), 0);
-    printf("Message: %s\n", strData);
+    recv(sockD, recvData, sizeof(recvData), 0);
+    printf("Message: %s\n", recvData);
   }
 
   return 0;

@@ -12,5 +12,7 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
+    // matinv -n 4 -P 1 -I rand
+
     return mainServer(clientSocket, serverOpts);
 }
