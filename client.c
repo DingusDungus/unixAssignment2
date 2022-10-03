@@ -7,48 +7,56 @@
 #include <string.h>
 #include <unistd.h>
 
-void getMatinvInp(char **argv, char *sendString)
+void printData(char *recvData, int size)
 {
-  fflush(stdin);
-
-  printf("Input for matinv:\n");
-  printf("Size of array: ");
-  scanf("%s", argv[2]);
-  argv[1] = "-n";
-  fflush(stdin);
-
-  printf("Number of parallel threads: ");
-  scanf("%s", argv[4]);
-  argv[3] = "-P";
-  fflush(stdin);
-
-  printf("Type of generation [rand || fast]: ");
-  scanf("%s", argv[6]);
-  argv[5] = "-I";
-  fflush(stdin);
-
-  // copies into a sendstring
-  int stringIndex = 0;
-  for (int y = 0; y < 10; y++)
+  for (int i = 0; i < 10; i++)
   {
-    for (int x = 0; x < 100 && argv[y][x] != '\0' && argv[y][x] != '\n'; x++)
+    if (recvData[i] != '\0')
     {
-      sendString[stringIndex] = argv[y][x];
-      stringIndex++;
+      printf("%s", recvData[i]);
     }
-    sendString[stringIndex] = ' ';
-    stringIndex++;
+    else
+    {
+      printf("Null");
+    }
   }
-  sendString[stringIndex] = '\0';
-  stringIndex++;
 }
 
-void printData(char **argv, int argc)
+// Takes in a data buf and a dest buf with value NULL, also size of data buf
+// This is needed for this project as the buffert recieves a lot of noise from the socket
+int sizeOfData(char *data, int size)
 {
-  for (int i = 0; i < argc; i++)
+  int workSize = 0; // Size of buf which has meaningful data in it
+  for (int i = 0;data[i] != '\0' && i < size;i++)
   {
-    printf("%s\n", argv[i]);
+    workSize++;
   }
+  return workSize;
+}
+
+void recvFile(int sockD)
+{
+  int buffer_size;
+  if (recv(sockD, &buffer_size, sizeof(buffer_size), 0) == -1)
+  {
+    printf("Error reading results\n");
+    return;
+  }
+  printf("Buffer size: %d\n", buffer_size);
+  char filename[] = "clientResultFile.txt";
+  FILE *resFile = fopen(filename, "a");
+  char *recvData = (char *)malloc(sizeof(char)*buffer_size);
+  memset(recvData, 0, sizeof(recvData));
+  int res = 0;
+  if ((res = recv(sockD, recvData, sizeof(char)*buffer_size, 0)) == -1)
+  {
+    printf("Error reading results\n");
+  }
+  printf("Bytes recieved: %d, written to [clientResultFile.txt]\n", res);
+  int size = sizeOfData(recvData, buffer_size);
+  fwrite(recvData, 1, sizeof(char) * size, resFile);
+  fclose(resFile);
+  free(recvData);
 }
 
 int main(int argc, char const *argv[])
@@ -89,27 +97,36 @@ int main(int argc, char const *argv[])
   else
   {
     int res;
-    char sendData[100] = "";
+    char sendData[255] = "";
     char *temp = NULL;
     char recvData[1024];
     int dataIteration = 0;
-
     recv(sockD, recvData, sizeof(recvData), 0);
     printf("%s\n", recvData);
+    char filename[] = "resFile";
 
-    fflush(stdin);
-    size_t len = 0;
-    ssize_t lineSize = 0;
-    lineSize = getline(&temp, &len, stdin);
-    strcpy(sendData, temp);
-    printf("%s\n", sendData);
-    
-    if (res = send(sockD, sendData, sizeof(sendData), 0) == -1)
+    while (1)
     {
-      printf("Failed to send\n");
+      memset(sendData, 0, sizeof(sendData));
+
+      fflush(stdin);
+      size_t len = 0;
+      ssize_t lineSize = 0;
+      printf("Command: ");
+      lineSize = getline(&temp, &len, stdin);
+      strcpy(sendData, temp);
+      if (strcmp(sendData, "done\n") == 0)
+      {
+        break;
+      }
+
+      if (res = send(sockD, sendData, sizeof(sendData), 0) == -1)
+      {
+        printf("Failed to send\n");
+      }
+      recvFile(sockD);
     }
-    recv(sockD, recvData, sizeof(recvData), 0);
-    printf("Message: %s\n", recvData);
+    send(sockD, sendData, sizeof(sendData), 0);
   }
 
   return 0;
