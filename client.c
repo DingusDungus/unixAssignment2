@@ -27,7 +27,7 @@ void printData(char *recvData, int size)
 int sizeOfData(char *data, int size)
 {
   int workSize = 0; // Size of buf which has meaningful data in it
-  for (int i = 0;data[i] != '\0' && i < size;i++)
+  for (int i = 0; data[i] != '\0' && i < size; i++)
   {
     workSize++;
   }
@@ -36,25 +36,29 @@ int sizeOfData(char *data, int size)
 
 void recvFile(int sockD)
 {
-  int buffer_size;
-  if (recv(sockD, &buffer_size, sizeof(buffer_size), 0) == -1)
+  int chunkSize;
+  if (recv(sockD, &chunkSize, sizeof(chunkSize), 0) == -1)
   {
     printf("Error reading results\n");
     return;
   }
-  printf("Buffer size: %d\n", buffer_size);
   char filename[] = "clientResultFile.txt";
   FILE *resFile = fopen(filename, "a");
-  char *recvData = (char *)malloc(sizeof(char)*buffer_size);
-  memset(recvData, 0, sizeof(recvData));
+  char *recvData = (char *)malloc(sizeof(char) * chunkSize);
   int res = 0;
-  if ((res = recv(sockD, recvData, sizeof(char)*buffer_size, 0)) == -1)
+  // Recieves chunks from server and appends them to result file
+  while (strcmp(recvData, "done"))
   {
-    printf("Error reading results\n");
+    memset(recvData, 0, chunkSize);
+    if ((res = recv(sockD, recvData, sizeof(char) * chunkSize, 0)) == -1)
+    {
+      printf("Error reading results\n");
+    }
+    int size = sizeOfData(recvData, chunkSize);
+    fwrite(recvData, 1, sizeof(char) * size, resFile);
   }
-  printf("Bytes recieved: %d, written to [clientResultFile.txt]\n", res);
-  int size = sizeOfData(recvData, buffer_size);
-  fwrite(recvData, 1, sizeof(char) * size, resFile);
+  printf("Results appended to file [%s]\n", filename);
+
   fclose(resFile);
   free(recvData);
 }
