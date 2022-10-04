@@ -6,4 +6,4 @@ server: main
 	gcc ./objects/*.o -o mathserver
 
 clean:
-	rm -f *.o objects/*.o mathserver
+	rm -f *.o objects/*.o mathserver resultFile*
