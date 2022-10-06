@@ -298,10 +298,6 @@ void poolKill(thread_pool_t *tp) {
   free(tp); // lastly free the pool
 }
 
-// ==============================================
-//               kmeans algorithm
-// ==============================================
-
 #define MAX_POINTS 4096
 #define MAX_CLUSTERS 32
 
@@ -383,40 +379,7 @@ int get_closest_centroid(int i, int k) {
   return nearest_cluster;
 }
 
-struct assignJobArgs {
-  // TODO:
-  int id;                  // what data point index should be worked on.
-  bool *something_changed; // something_changed bool pointer supplied by creator
-                           // of job to be shared by all jobs of this type.
-  pthread_mutex_t *assignMutex; // mutex supplied by creator of job to be shared
-                                // by all jobs of this type.
-};
-
-void assign_clusters_job(void *params) {
-  // TODO:
-  struct assignJobArgs *args = (struct assignJobArgs *)params;
-  int id = args->id;
-  pthread_mutex_t *assignMutex = args->assignMutex;
-  bool *something_changed = args->something_changed;
-
-  int old_cluster = -1, new_cluster = -1;
-  old_cluster = data[id].cluster;
-  new_cluster = get_closest_centroid(id, k);
-  data[id].cluster = new_cluster; // Assign a cluster to the point i
-  if (old_cluster != new_cluster) {
-    pthread_mutex_lock(assignMutex);
-    *something_changed = true;
-    pthread_mutex_unlock(assignMutex);
-  }
-}
-
-// TODO: for each thread, check that their something_changed bool is true, only
-// if it's true, we want to change to main threads functions something_changed
-// variable to true. And it main thred funcs var is already true, we dont do
-// anything in the thread. Needs a mutex lock on the something_changed var from
-// the main thread func.
 bool assign_clusters_to_points(thread_pool_t *pool) {
-  // TODO: create jobs for each 0-N
   bool something_changed = false;
   int old_cluster = -1, new_cluster = -1;
   for (int i = 0; i < N; i++) { // For each data point
@@ -427,12 +390,10 @@ bool assign_clusters_to_points(thread_pool_t *pool) {
       something_changed = true;
     }
   }
-  // TODO: wait for all threads/jobs to finish. before return.
   return something_changed;
 }
 
 void update_cluster_centers(thread_pool_t *pool) {
-  // TODO: create jobs for each (0-N) that do second loop (0-k) as their job
   /* Update the cluster centers */
   int c;
   int count[MAX_CLUSTERS] = {
@@ -449,7 +410,6 @@ void update_cluster_centers(thread_pool_t *pool) {
     cluster[i].x = temp[i].x / count[i];
     cluster[i].y = temp[i].y / count[i];
   }
-  // TODO: wait for all threads/jobs to finish. before return.
 }
 
 void kmeans(int k, thread_pool_t *pool) {
