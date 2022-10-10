@@ -383,6 +383,7 @@ int get_closest_centroid(int i, int k) {
   return nearest_cluster;
 }
 
+// TODO: add start and end instead of index.
 struct assignJobArgs {
   int index;               // what data point index should be worked on.
   bool *something_changed; // something_changed bool pointer supplied by creator
@@ -393,6 +394,7 @@ struct assignJobArgs {
 
 // job function to be added to queue by assign_clusters_to_points
 void assign_clusters_job(void *params) {
+  // TODO: add for loop so function can work on a range and not just one index.
   struct assignJobArgs *args = (struct assignJobArgs *)params;
   int id = args->index;
   pthread_mutex_t *assignMutex = args->assignMutex;
@@ -420,6 +422,8 @@ bool assign_clusters_to_points(thread_pool_t *pool) {
   struct assignJobArgs *assignJobArgs;
   pthread_mutex_t assignMutex;
   pthread_mutex_init(&assignMutex, NULL);
+  // TODO: split work into jobs, something like N / nrOfThreads.
+  // but make sure to handle the remainder so work is not missed.
   for (int i = 0; i < N; i++) { // For each data point
     assignJobArgs = malloc(sizeof(struct assignJobArgs));
     assignJobArgs->index = i;
@@ -432,6 +436,7 @@ bool assign_clusters_to_points(thread_pool_t *pool) {
   return something_changed;
 }
 
+// TODO: add start and end instead of index.
 struct updateJobArgs {
   int index;   // the index
   int c;       // the cluster that the point belongs to.
@@ -442,6 +447,7 @@ struct updateJobArgs {
 
 // job function to be added to queue by update_cluster_centers
 void update_clusters_first_job(void *params) {
+  // TODO: add for loop so function can work on a range and not just one index.
   struct updateJobArgs *args = (struct updateJobArgs *)params;
   int c = args->c;
   int index = args->index;
@@ -456,7 +462,6 @@ void update_clusters_first_job(void *params) {
 void update_clusters_second_job(void *params) {
   struct updateJobArgs *args = (struct updateJobArgs *)params;
   int index = args->index;
-  // TODO:
   cluster[index].x = args->temp[index].x / args->count[index];
   cluster[index].y = args->temp[index].y / args->count[index];
   free(params);
@@ -466,15 +471,13 @@ void update_cluster_centers(thread_pool_t *pool) {
   // TODO: create jobs for each (0-N) that do second loop (0-k) as their job
   /* Update the cluster centers */
   int c;
-  // int count[MAX_CLUSTERS] = {
-  //     0}; // Array to keep track of the number of points in each cluster
-  // point temp[MAX_CLUSTERS] = {0.0};
-
   int *count;
   count = calloc(1, sizeof(int[MAX_CLUSTERS]));
   point *temp;
   temp = calloc(1, sizeof(point[MAX_CLUSTERS]));
 
+  // TODO: split work into jobs, something like N / nrOfThreads.
+  // but make sure to handle the remainder so work is not missed.
   struct updateJobArgs *updateJobArgs;
   for (int i = 0; i < N; i++) {
     updateJobArgs = malloc(sizeof(struct updateJobArgs));
