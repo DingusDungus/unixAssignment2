@@ -384,18 +384,17 @@ int get_closest_centroid(int i, int k) {
 }
 
 struct assignJobArgs {
-  // TODO:
-  int id;                  // what data point index should be worked on.
+  int index;               // what data point index should be worked on.
   bool *something_changed; // something_changed bool pointer supplied by creator
                            // of job to be shared by all jobs of this type.
   pthread_mutex_t *assignMutex; // mutex supplied by creator of job to be shared
                                 // by all jobs of this type.
 };
 
+// job function to be added to queue by assign_clusters_to_points
 void assign_clusters_job(void *params) {
-  // TODO:
   struct assignJobArgs *args = (struct assignJobArgs *)params;
-  int id = args->id;
+  int id = args->index;
   pthread_mutex_t *assignMutex = args->assignMutex;
   bool *something_changed = args->something_changed;
 
@@ -408,48 +407,96 @@ void assign_clusters_job(void *params) {
     *something_changed = true;
     pthread_mutex_unlock(assignMutex);
   }
+  free(params);
 }
 
-// TODO: for each thread, check that their something_changed bool is true, only
+// for each thread, check that their something_changed bool is true, only
 // if it's true, we want to change to main threads functions something_changed
 // variable to true. And it main thred funcs var is already true, we dont do
 // anything in the thread. Needs a mutex lock on the something_changed var from
 // the main thread func.
 bool assign_clusters_to_points(thread_pool_t *pool) {
-  // TODO: create jobs for each 0-N
   bool something_changed = false;
-  int old_cluster = -1, new_cluster = -1;
+  struct assignJobArgs *assignJobArgs;
+  pthread_mutex_t assignMutex;
+  pthread_mutex_init(&assignMutex, NULL);
   for (int i = 0; i < N; i++) { // For each data point
-    old_cluster = data[i].cluster;
-    new_cluster = get_closest_centroid(i, k);
-    data[i].cluster = new_cluster; // Assign a cluster to the point i
-    if (old_cluster != new_cluster) {
-      something_changed = true;
-    }
+    assignJobArgs = malloc(sizeof(struct assignJobArgs));
+    assignJobArgs->index = i;
+    assignJobArgs->something_changed = &something_changed;
+    assignJobArgs->assignMutex = &assignMutex;
+    poolAddJob(pool, assign_clusters_job, assignJobArgs);
+    // printf("added job %d\n", i);
   }
-  // TODO: wait for all threads/jobs to finish. before return.
+  poolBarrierWait(pool);
   return something_changed;
+}
+
+struct updateJobArgs {
+  int index;   // the index
+  int c;       // the cluster that the point belongs to.
+  int *count;  // Array to keep track of the number of points in
+               // each cluster
+  point *temp; // temp array
+};
+
+// job function to be added to queue by update_cluster_centers
+void update_clusters_first_job(void *params) {
+  struct updateJobArgs *args = (struct updateJobArgs *)params;
+  int c = args->c;
+  int index = args->index;
+
+  args->count[c]++;
+  args->temp[c].x += data[index].x;
+  args->temp[c].y += data[index].y;
+  free(params);
+}
+
+// job function to be added to queue by update_cluster_centers
+void update_clusters_second_job(void *params) {
+  struct updateJobArgs *args = (struct updateJobArgs *)params;
+  int index = args->index;
+  // TODO:
+  cluster[index].x = args->temp[index].x / args->count[index];
+  cluster[index].y = args->temp[index].y / args->count[index];
+  free(params);
 }
 
 void update_cluster_centers(thread_pool_t *pool) {
   // TODO: create jobs for each (0-N) that do second loop (0-k) as their job
   /* Update the cluster centers */
   int c;
-  int count[MAX_CLUSTERS] = {
-      0}; // Array to keep track of the number of points in each cluster
-  point temp[MAX_CLUSTERS] = {0.0};
+  // int count[MAX_CLUSTERS] = {
+  //     0}; // Array to keep track of the number of points in each cluster
+  // point temp[MAX_CLUSTERS] = {0.0};
 
+  int *count;
+  count = calloc(1, sizeof(int[MAX_CLUSTERS]));
+  point *temp;
+  temp = calloc(1, sizeof(point[MAX_CLUSTERS]));
+
+  struct updateJobArgs *updateJobArgs;
   for (int i = 0; i < N; i++) {
-    c = data[i].cluster;
-    count[c]++;
-    temp[c].x += data[i].x;
-    temp[c].y += data[i].y;
+    updateJobArgs = malloc(sizeof(struct updateJobArgs));
+    updateJobArgs->index = i;
+    updateJobArgs->c = data[i].cluster;
+    updateJobArgs->count = count;
+    updateJobArgs->temp = temp;
+    poolAddJob(pool, update_clusters_first_job, updateJobArgs);
   }
+  poolBarrierWait(pool);
+  // maybe need to wait inbetween steps/loops
   for (int i = 0; i < k; i++) {
-    cluster[i].x = temp[i].x / count[i];
-    cluster[i].y = temp[i].y / count[i];
+    updateJobArgs = malloc(sizeof(struct updateJobArgs));
+    updateJobArgs->index = i;
+    updateJobArgs->count = count;
+    updateJobArgs->temp = temp;
+    poolAddJob(pool, update_clusters_second_job, updateJobArgs);
   }
-  // TODO: wait for all threads/jobs to finish. before return.
+  poolBarrierWait(pool);
+  // free memory
+  free(count);
+  free(temp);
 }
 
 void kmeans(int k, thread_pool_t *pool) {
@@ -459,13 +506,15 @@ void kmeans(int k, thread_pool_t *pool) {
     iter++; // Keep track of number of iterations
     somechange = assign_clusters_to_points(pool);
     update_cluster_centers(pool);
+    poolBarrierWait(pool);
   } while (somechange);
   printf("Number of iterations taken = %d\n", iter);
   printf("Computed cluster numbers successfully!\n");
 }
 
 void write_results() {
-  FILE *fp = fopen("kmeans-results.txt", "w");
+  fileName = "kmeans-results.txt";
+  FILE *fp = fopen(fileName, "w");
   if (fp == NULL) {
     perror("Cannot open the file");
     exit(EXIT_FAILURE);
@@ -474,7 +523,7 @@ void write_results() {
       fprintf(fp, "%.2f %.2f %d\n", data[i].x, data[i].y, data[i].cluster);
     }
   }
-  printf("Wrote the results to a file!\n");
+  printf("Wrote the results to file: %s\n", fileName);
 }
 
 void Read_Options(int argc, char **argv) {
