@@ -571,6 +571,8 @@ void Read_Options(int argc, char **argv) {
 static const size_t NR_OF_THREADS = 8;
 
 int main(int argc, char **argv) {
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
   Read_Options(argc, argv);
   read_data();
   // create pool stuff
