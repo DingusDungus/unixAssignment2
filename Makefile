@@ -10,10 +10,10 @@ cleanSeqKmeans:
 	rm -f seqkmeans
 
 matinvDebug: cleanMatinv
-	gcc -Wall -w -pthread -o matinv matrix_inverse_parallel.c -g
+	gcc -Wall -w -pthread -o matinv matinv-par.c -g
 
 matinv: cleanMatinv
-	gcc -Wall -w -O2 -pthread -o matinv matrix_inverse_parallel.c
+	gcc -Wall -w -O2 -pthread -o matinv matinv-par.c
 
 kmeans: cleanKmeans
 	gcc -Wall -w -O2 -pthread -o kmeans kmeans-par.c
