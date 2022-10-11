@@ -482,19 +482,13 @@ void parallel_find_inverse(thread_pool_t *pool) {
       {
         // add jobs to job queue column wise
         struct jobArgs *eliminationArgs;
-        for (col = 0; col < NR_OF_THREADS; col++) {
-          eliminationArgs = malloc(sizeof(struct jobArgs));
-          eliminationArgs->p = p;
-          eliminationArgs->row = row;
-          eliminationArgs->start = work * col;
-          eliminationArgs->end = work * (col + 1);
-          eliminationArgs->multiplier = multiplier;
-          // add remainder if it exists to the last job.
-          if (remainder != 0 && col == NR_OF_THREADS - 1) {
-            eliminationArgs->end += remainder;
-          }
-          poolAddJob(pool, matrix_elimination_job, eliminationArgs);
-        }
+        eliminationArgs = malloc(sizeof(struct jobArgs));
+        eliminationArgs->p = p;
+        eliminationArgs->row = row;
+        eliminationArgs->start = 0;
+        eliminationArgs->end = N;
+        eliminationArgs->multiplier = multiplier;
+        poolAddJob(pool, matrix_elimination_job, eliminationArgs);
       }
     }
     poolBarrierWait(pool);
