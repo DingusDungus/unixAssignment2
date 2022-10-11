@@ -325,7 +325,6 @@ struct jobArgs {
   int start;
   int end;
   int p;
-  int col;
   int row;
   double pivalue;
   double multiplier;
@@ -340,8 +339,9 @@ void Read_Options(int, char **);
 void matrix_identity_job(void *params);
 void matrix_elimination_job(void *params);
 void parallel_find_inverse(thread_pool_t *pool);
+void checkMatrix();
 
-static const size_t NR_OF_THREADS = 9;
+static const size_t NR_OF_THREADS = 16;
 
 int main(int argc, char **argv) {
   setbuf(stdout, NULL);
@@ -366,7 +366,28 @@ int main(int argc, char **argv) {
   if (PRINT == 1 || PRINT == 2) {
     Print_Matrix(A, "End: Input");
     Print_Matrix(I, "Inversed");
+    checkMatrix();
   }
+}
+
+// check the diagonal of the A matrix only contains 1, and rest is 0.
+void checkMatrix() {
+  int i, j;
+  bool identity = true;
+
+  for (i = 0; i < N; i++) {
+    for (j = 0; j < N; j++) {
+      if (A[i][j] != 1 && A[j][i] != 0) {
+        identity = false;
+        break;
+      }
+    }
+  }
+
+  if (identity == true)
+    printf(" The matrix is an identity matrix.\n\n");
+  else
+    printf(" The matrix is not an identity matrix.\n\n");
 }
 
 void matrix_identity_job(void *params) {
@@ -442,7 +463,6 @@ void parallel_find_inverse(thread_pool_t *pool) {
     for (col = 0; col < NR_OF_THREADS; col++) {
       identityArgs = malloc(sizeof(struct jobArgs));
       identityArgs->p = p;
-      identityArgs->col = col;
       identityArgs->start = work * col;
       identityArgs->end = work * (col + 1);
       identityArgs->pivalue = pivalue;
@@ -453,7 +473,6 @@ void parallel_find_inverse(thread_pool_t *pool) {
       poolAddJob(pool, matrix_identity_job, identityArgs);
     }
     poolBarrierWait(pool);
-    assert(A[p][p] == 1.0);
 
     // Elimination
     double multiplier;
@@ -467,7 +486,6 @@ void parallel_find_inverse(thread_pool_t *pool) {
           eliminationArgs = malloc(sizeof(struct jobArgs));
           eliminationArgs->p = p;
           eliminationArgs->row = row;
-          eliminationArgs->col = col;
           eliminationArgs->start = work * col;
           eliminationArgs->end = work * (col + 1);
           eliminationArgs->multiplier = multiplier;
@@ -477,10 +495,9 @@ void parallel_find_inverse(thread_pool_t *pool) {
           }
           poolAddJob(pool, matrix_elimination_job, eliminationArgs);
         }
-        poolBarrierWait(pool);
-        assert(A[row][p] == 0.0);
       }
     }
+    poolBarrierWait(pool);
   }
 }
 

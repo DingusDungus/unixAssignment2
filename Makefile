@@ -10,7 +10,7 @@ cleanSeqKmeans:
 	rm -f seqkmeans
 
 matinvDebug: cleanMatinv
-	gcc -Wall -w -pthread -o matinv matinv-par.c -g
+	gcc -Wall -w -pthread -o matinv matinv-par.c -g -pg
 
 matinv: cleanMatinv
 	gcc -Wall -w -O2 -pthread -o matinv matinv-par.c
