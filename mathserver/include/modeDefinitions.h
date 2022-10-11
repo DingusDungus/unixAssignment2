@@ -1,0 +1,8 @@
+#ifndef MODE_DEFINITIONS_H
+#define MODE_DEFINITIONS_H
+
+#define MATINV 1
+#define KMEANS 2
+#define UNACCEPTABLE_INPUT 0
+
+#endif

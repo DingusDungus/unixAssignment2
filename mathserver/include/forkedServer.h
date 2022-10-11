@@ -9,6 +9,7 @@
 #include <sys/types.h>
 
 #include "calculationProcessAPI.h"
+#include "fileTransfer.h"
 
 int forkedServer(int *clientSocket);
 

@@ -1,13 +1,21 @@
 clean: cleanMatinv cleanKmeans
 
+cleanClient:
+	rm -f client ./mathserver/src/*.o
+
 cleanMatinv:
 	rm -f matinv
 
 cleanKmeans:
 	rm -f kmeans
 
+<<<<<<< HEAD
+client: cleanClient
+	gcc -Wall ./mathserver/src/fileTransfer.c client.c -o client
+=======
 cleanSeqKmeans:
 	rm -f seqkmeans
+>>>>>>> d902e8966776769bd43748e6d62f5a5ea31e1120
 
 matinvDebug: cleanMatinv
 	gcc -Wall -w -pthread -o matinv matinv-par.c -g -pg
