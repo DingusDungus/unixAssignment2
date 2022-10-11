@@ -312,6 +312,7 @@ typedef struct point {
 } point;
 
 char *fileName = NULL;       // name of input file
+char *outputName = NULL;     // name of output file
 int N;                       // number of entries in the data
 int k = 0;                   // number of centroids
 point data[MAX_POINTS];      // Data coordinates
@@ -516,8 +517,12 @@ void kmeans(int k, thread_pool_t *pool) {
 }
 
 void write_results() {
-  fileName = "kmeans-results.txt";
-  FILE *fp = fopen(fileName, "w");
+  if (outputName == NULL) {
+    outputName = "kmeans-results.txt";
+    printf("No outputname provided, default output file: %s\n", outputName);
+  }
+
+  FILE *fp = fopen(outputName, "w");
   if (fp == NULL) {
     perror("Cannot open the file");
     exit(EXIT_FAILURE);
@@ -526,7 +531,7 @@ void write_results() {
       fprintf(fp, "%.2f %.2f %d\n", data[i].x, data[i].y, data[i].cluster);
     }
   }
-  printf("Wrote the results to file: %s\n", fileName);
+  printf("Wrote the results to file: %s\n", outputName);
 }
 
 void Read_Options(int argc, char **argv) {
@@ -556,6 +561,10 @@ void Read_Options(int argc, char **argv) {
       case 'f':
         --argc;
         fileName = *++argv;
+        break;
+      case 'o':
+        --argc;
+        outputName = *++argv;
         break;
       case 'P':
         --argc;
