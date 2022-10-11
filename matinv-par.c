@@ -321,16 +321,9 @@ matrix A;         /* matrix A           */
 matrix I = {0.0}; /* The A inverse matrix, which will be initialized to the
                      identity matrix */
 
-struct threadArgs {
-  int id;
-  int p;
-  int col;
-  int row;
-  double pivalue;
-  double multiplier;
-};
-
 struct jobArgs {
+  int start;
+  int end;
   int p;
   int col;
   int row;
@@ -348,12 +341,13 @@ void matrix_identity_job(void *params);
 void matrix_elimination_job(void *params);
 void parallel_find_inverse(thread_pool_t *pool);
 
-static const size_t NR_OF_THREADS = 8;
+static const size_t NR_OF_THREADS = 9;
 
 int main(int argc, char **argv) {
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
-  printf("Matrix Inverse\n");
+  printf("Matrix Inverse parallel\n");
+  printf("Number of threads: %d\n", (int)NR_OF_THREADS);
   int i, timestart, timeend, iter;
 
   Init_Default();           /* Init default values      */
@@ -378,18 +372,22 @@ int main(int argc, char **argv) {
 void matrix_identity_job(void *params) {
   struct jobArgs *args = (struct jobArgs *)params;
   int p = args->p;
-  int col = args->col;
+  int start = args->start;
+  int end = args->end;
   double pivalue = args->pivalue;
 
   // debug print if PRINT == 2
   if (PRINT == 2) {
-    printf("matrix_to_identity: p: %d, col: %d, pivalue: %f\n", p, col,
-           pivalue);
+    printf("matrix_to_identity: p: %d, start: %d, end: %d, pivalue: %f\n", p,
+           start, end, pivalue);
   }
 
   // job
-  A[p][col] = A[p][col] / pivalue; /* Division step on A */
-  I[p][col] = I[p][col] / pivalue; /* Division step on I */
+  int col;
+  for (col = start; col < end; col++) {
+    A[p][col] = A[p][col] / pivalue; /* Division step on A */
+    I[p][col] = I[p][col] / pivalue; /* Division step on I */
+  }
 
   free(args);
 }
@@ -397,21 +395,26 @@ void matrix_identity_job(void *params) {
 void matrix_elimination_job(void *params) {
   struct jobArgs *args = (struct jobArgs *)params;
   int p = args->p;
-  int col = args->col;
+  int start = args->start;
+  int end = args->end;
   int row = args->row;
   double multiplier = args->multiplier;
 
   // debug print if PRINT == 2
   if (PRINT == 2) {
-    printf("matrix_elimination: p: %d, row: %d, col: %d, multiplier: %f\n", p,
-           row, col, multiplier);
+    printf("matrix_elimination: p: %d, row: %d, start: %d, end: %d, "
+           "multiplier: %f\n",
+           p, row, start, end, multiplier);
   }
 
   // job
-  A[row][col] =
-      A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
-  I[row][col] =
-      I[row][col] - I[p][col] * multiplier; /* Elimination step on I */
+  int col;
+  for (col = start; col < end; col++) {
+    A[row][col] =
+        A[row][col] - A[p][col] * multiplier; /* Elimination step on A */
+    I[row][col] =
+        I[row][col] - I[p][col] * multiplier; /* Elimination step on I */
+  }
 
   free(args);
 }
@@ -420,16 +423,33 @@ void parallel_find_inverse(thread_pool_t *pool) {
   int row, col, p; // 'p' stands for pivot (numbered from 0 to N-1)
   double pivalue;  // pivot value
 
+  int work = N / NR_OF_THREADS;
+  int remainder = N % NR_OF_THREADS;
+  // handle case where N < NR_OF_THREADS by setting work to 1
+  if (work == 0) {
+    work = 1;
+    remainder = 0;
+  }
+  if (PRINT == 2) {
+    printf("work: %d, remainder: %d\n", work, remainder);
+  }
+
   /* Bringing the matrix A to the identity form */
   for (p = 0; p < N; p++) { /* Outer loop */
     pivalue = A[p][p];
     // add jobs to job queue column wise
     struct jobArgs *identityArgs;
-    for (col = 0; col < N; col++) {
+    for (col = 0; col < NR_OF_THREADS; col++) {
       identityArgs = malloc(sizeof(struct jobArgs));
       identityArgs->p = p;
       identityArgs->col = col;
+      identityArgs->start = work * col;
+      identityArgs->end = work * (col + 1);
       identityArgs->pivalue = pivalue;
+      // add remainder if it exists to the last job.
+      if (remainder != 0 && col == NR_OF_THREADS - 1) {
+        identityArgs->end += remainder;
+      }
       poolAddJob(pool, matrix_identity_job, identityArgs);
     }
     poolBarrierWait(pool);
@@ -443,12 +463,18 @@ void parallel_find_inverse(thread_pool_t *pool) {
       {
         // add jobs to job queue column wise
         struct jobArgs *eliminationArgs;
-        for (col = 0; col < N; col++) {
+        for (col = 0; col < NR_OF_THREADS; col++) {
           eliminationArgs = malloc(sizeof(struct jobArgs));
           eliminationArgs->p = p;
           eliminationArgs->row = row;
           eliminationArgs->col = col;
+          eliminationArgs->start = work * col;
+          eliminationArgs->end = work * (col + 1);
           eliminationArgs->multiplier = multiplier;
+          // add remainder if it exists to the last job.
+          if (remainder != 0 && col == NR_OF_THREADS - 1) {
+            eliminationArgs->end += remainder;
+          }
           poolAddJob(pool, matrix_elimination_job, eliminationArgs);
         }
         poolBarrierWait(pool);
