@@ -1,10 +1,16 @@
 clean: cleanMatinv cleanKmeans
 
+cleanClient:
+	rm -f client ./mathserver/src/*.o
+
 cleanMatinv:
 	rm -f matinv
 
 cleanKmeans:
 	rm -f kmeans
+
+client: cleanClient
+	gcc -Wall ./mathserver/src/fileTransfer.c client.c -o client
 
 matinvDebug: cleanMatinv
 	gcc -Wall -w -pthread -o matinv matrix_inverse_parallel.c -g

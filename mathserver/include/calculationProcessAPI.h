@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <string.h>
 
-char* initCalculation(char *argString);
+#include "./modeDefinitions.h"
+#include "./fileTransfer.h"
+
+char* initCalculation(char *argString, int mode, int socket);
 
 #endif
