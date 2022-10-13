@@ -113,7 +113,7 @@ char *kmeansMode(char *argString, int socket) {
   char *command = getCommand(parsedCommand);
   printf("%s\n", command);
   recvFile(socket, inputFile);
-  if (system(command) == 0) {
+  if (system(command) != 0) {
     return 0;
   }
   transferFile(socket, 4096, outputFile);

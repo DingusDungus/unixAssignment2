@@ -58,6 +58,7 @@ int copy2chunk(char *chunk, char *resBuf, int bufSize, const int MAX_CHUNK,
                int iteration, int chunkNr) {
   int chunk_index = 0;
   int i;
+  memset(chunk, 0, sizeof(char) * MAX_CHUNK);
   for (i = iteration; i < (MAX_CHUNK * chunkNr) && i < bufSize;
        i++, chunk_index++) {
     chunk[chunk_index] = resBuf[i];
@@ -95,7 +96,7 @@ int transferFile(int socket, int chunkSize, char *filename) {
   FILE *resFile = fopen(filename, "r");
   const int MAX_CHUNK = chunkSize; // Max bytes allowed for server to send per
                                    // send (buffer might discard if too big)
-
+  printf("Transferring file\n");
   fseek(resFile, 0L, SEEK_END);
   int size = ftell(resFile);
   fseek(resFile, 0L, SEEK_SET);
@@ -125,6 +126,10 @@ int recvFile(int socket, char *filename) {
     if ((res = recv(socket, recvData, sizeof(char) * chunkSize, 0)) == 0) {
       printf("Sender disconnected\n");
       return 1;
+    }
+    if (isEqual(recvData, "done", 100, 4))
+    {
+      break;
     }
     int size = getWorkSize(recvData, chunkSize);
     fwrite(recvData, 1, sizeof(char) * size, resFile);
