@@ -64,16 +64,18 @@ int main(int argc, char const *argv[]) {
                "kmeans)\n");
         continue;
       }
-      else if (mode == KMEANS) {
-        char *filename = getFile(sendData);
-        transferFile(sockD, 4096, filename);
-        recvFile(sockD, filename);
-      }
-
       if ((res = send(sockD, sendData, sizeof(sendData), 0)) == -1) {
         printf("Failed to send\n");
       }
-      recvFile(sockD, "clientResultFile.txt");
+      if (mode == KMEANS) {
+        char *inputfile = getFile(sendData);
+        char outFile[100] = "outputFile.txt";
+        transferFile(sockD, 4096, inputfile);
+        recvFile(sockD, outFile);
+        printf("Kmeans results in: %s\n", outFile);
+      } else {
+        recvFile(sockD, "clientResultFile.txt");
+      }
     }
     send(sockD, sendData, sizeof(sendData), 0);
   }

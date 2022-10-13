@@ -10,7 +10,8 @@ char *getFile(char *argString) {
       flagFound = true;
       i = i + 2;
     }
-    else if (argString[i] != ' ' && flagFound) {
+    else if (argString[i] != ' ' && flagFound && 
+    argString[i] != '\n') {
       fileName[index] = argString[i];
       index++;
     } else if (index > 0) {
@@ -105,7 +106,6 @@ int transferFile(int socket, int chunkSize, char *filename) {
   fclose(resFile);
   printf("%s\n", resBuf);
   size = getWorkSize(resBuf, size);
-  remove(filename);
   sendChunks(resFile, resBuf, size, MAX_CHUNK, socket);
   return 0;
 }
