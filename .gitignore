@@ -40,6 +40,9 @@ kmeans
 seqmatinv
 seqkmeans
 
+# Extra
+kmeans-results.txt
+
 # Debug files
 *.dSYM/
 *.su
