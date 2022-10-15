@@ -2,6 +2,8 @@
 #include <unistd.h>
 
 int forkedServer(int *clientSocket) {
+  int matinvSol = 0;
+  int kmeansSol = 0;
   char sendMsg[255] =
       "Welcome to mathserver API\n"
       "Options:\n"
@@ -11,23 +13,33 @@ int forkedServer(int *clientSocket) {
       "When finished write [done]\n";
   char recvData[255];
   send(*clientSocket, sendMsg, sizeof(sendMsg), 0);
+  sendPid(*clientSocket);
   while (1) {
     memset(recvData, 0, sizeof(recvData));
     if (recv(*clientSocket, recvData, sizeof(recvData), 0) == 0) {
       printf("Client disconnected from process: %d\n", getpid());
       break;
     }
+    printf("Client %d commanded %s", getpid(), recvData);
     if (strcmp(recvData, "done\n") == 0) {
       printf("Client disconnected from process: %d\n", getpid());
       break;
     }
     int mode = getMode(recvData);
-    if (initCalculation(recvData, mode, *clientSocket) == 1)
-    {
-      printf("User (%d) input illegal code\n", getpid());
-      break;
+    if (mode == KMEANS) {
+      kmeansSol++;
+      if (initCalculation(recvData, mode, *clientSocket, kmeansSol) == 1) {
+        printf("Client (%d) input illegal code\n", getpid());
+        break;
+      }
     }
-
+    else if (mode == MATINV) {
+      matinvSol++;
+      if (initCalculation(recvData, mode, *clientSocket, matinvSol) == 1) {
+        printf("Client (%d) input illegal code\n", getpid());
+        break;
+      }
+    }
   }
   close(*clientSocket);
   return 1;

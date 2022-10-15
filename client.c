@@ -12,9 +12,21 @@
 #include "./mathserver/include/clientArgsParsing.h"
 #include "mathserver/include/clientOptions.h"
 
+void getFileName(char *fileName, int nr, char *clientNr)
+{
+  char nrString[100];
+  char fileExtension[100] = ".txt";
+  char extendedFileName[100] = "_soln";
+  sprintf(nrString, "%d", nr);
+  strcat(fileName, clientNr);
+  strcat(fileName, extendedFileName);
+  strcat(fileName, nrString);
+  strcat(fileName, fileExtension);
+}
+
 int main(int argc, char const *argv[]) {
   struct options clientOptions;
-  parseArgs(argv, argc, &clientOptions);
+  cparseArgs(argv, argc, &clientOptions);
   // Converts ip from argv to ip for computer
   struct in_addr SERVER_ADDRESS;
   int result = inet_pton(AF_INET, clientOptions.address, &SERVER_ADDRESS);
@@ -44,6 +56,10 @@ int main(int argc, char const *argv[]) {
     char recvData[1024];
     recv(sockD, recvData, sizeof(recvData), 0);
     printf("%s\n", recvData);
+    int matinvResCount = 0;
+    int kmeansResCount = 0;
+    char clientNr[100];
+    recvPid(sockD, clientNr);
     while (1) {
       memset(sendData, 0, sizeof(sendData));
 
@@ -66,12 +82,18 @@ int main(int argc, char const *argv[]) {
       }
       if (mode == KMEANS) {
         char *inputfile = getFile(sendData);
-        char outFile[100] = "kmeansOutputFile.txt";
+        char outFile[100] = "kmeans_client";
+        kmeansResCount++;
+        getFileName(outFile, matinvResCount, clientNr);
         transferFile(sockD, 4096, inputfile);
         recvFile(sockD, outFile, "w");
-        printf("Kmeans results in: %s\n", outFile);
+        printf("Received the solution: %s\n", outFile);
       } else {
-        recvFile(sockD, "matinvOutputFile.txt", "a");
+        char file[100] = "matinv_client";
+        matinvResCount++;
+        getFileName(file, matinvResCount, clientNr);
+        recvFile(sockD, file, "w");
+        printf("Received the solution: %s\n", file);
       }
     }
     send(sockD, sendData, sizeof(sendData), 0);

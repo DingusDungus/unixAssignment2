@@ -1,12 +1,12 @@
 #include "../include/clientArgsParsing.h"
 
-void printHelp() {
+void cprintHelp() {
   printf("-lient v.1.0-\n   -h // Prints out client options and their "
          "functionality\n   -p [port] // Port to server "
          "\n   -ip // Address to server\n");
 }
 
-bool parseArgs(const char **argv, int argc, struct options *clientOpts) {
+bool cparseArgs(const char **argv, int argc, struct options *clientOpts) {
   // Sets default values for options
   clientOpts->port = 3000;
   clientOpts->address = "0.0.0.0";
@@ -15,7 +15,7 @@ bool parseArgs(const char **argv, int argc, struct options *clientOpts) {
     if (strcmp(commandLine, "-h") == 0) {
       // If parser finds that -h was written in commandline, no further options
       // will be parsed as server will only print help text
-      printHelp();
+      cprintHelp();
       exit(0);
     } else if (strcmp(commandLine, "-p") == 0) {
       if ((i + 1) >= argc) {

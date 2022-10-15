@@ -21,14 +21,12 @@ int forkStrategy(int *clientSocket, struct sockaddr_in servAddr, int servSockD, 
     {
         // integer to hold client socket.
         *clientSocket = accept(servSockD, NULL, NULL);
-        printf("Accepted client!\n");
         if (fork() == 0)
         {
-            printf("Child process pid: %d\n", getpid());
+            printf("Connected with client %d\n", getpid());
             return forkedServer(clientSocket);
         }
     }
-    printf("Client fork starting!; pid: %d\n", getpid());
     return 0;
 }
 
@@ -114,12 +112,10 @@ int muxBasic(struct sockaddr_in servAddr, int servSockD, int port)
             }
             if (fds[i].fd != servSockD && fds[i].events == POLLIN)
             {
-                printf("Client ready to be read!\n");
-                if (res = recv(fds[i].fd, clientBuf, sizeof(clientBuf), 0) == -1)
+                if ((res = recv(fds[i].fd, clientBuf, sizeof(clientBuf), 0)) == -1)
                 {
                     continue;
                 }
-                printf("Message: %s", clientBuf);
                 res = send(fds[i].fd, sendBuf, sizeof(sendBuf), 0);
                 // Closes connection
                 close(fds[i].fd);

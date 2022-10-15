@@ -21,6 +21,12 @@ char *getFile(char *argString);
 // NOTE: command buffer must be bigger than size 10
 int getMode(char *command);
 
+// Send client pid to client
+int sendPid(int socket);
+
+// Recieves pid for client
+int recvPid(int socket, char *pid);
+
 // Gets total useful data from a buffer, disregarding trash-values
 int getWorkSize(char *buf, int size);
 

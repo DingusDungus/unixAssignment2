@@ -32,21 +32,20 @@ char *getK(char *argString) {
   return k;
 }
 
-char *createOutPutFile() {
+void createOutPutFile(char *file, int nr) {
   char fileExtension[100] = ".txt";
-  char resFile[100] = "outFile";
+  char extended[100] = "_soln";
   char pid[100];
+  char s_nr[100];
   char createResFile[100] = "touch ";
   sprintf(pid, "%d", getpid());
-  printf("%s\n", pid);
-  strcat(resFile, pid);
-  strcat(resFile, fileExtension);
-  strcat(createResFile, resFile);
+  sprintf(s_nr, "%d", nr);
+  strcat(file, pid);
+  strcat(file, extended);
+  strcat(file, s_nr);
+  strcat(file, fileExtension);
+  strcat(createResFile, file);
   system(createResFile);
-  char *res = (char *)malloc(sizeof(char) * 100);
-  strcpy(res, resFile);
-
-  return res;
 }
 
 char *createInPutFile() {
@@ -55,7 +54,6 @@ char *createInPutFile() {
   char pid[100];
   char createResFile[100] = "touch ";
   sprintf(pid, "%d", getpid());
-  printf("%s\n", pid);
   strcat(resFile, pid);
   strcat(resFile, fileExtension);
   strcat(createResFile, resFile);
@@ -75,8 +73,9 @@ char *getCommand(char *argString) {
   return res;
 }
 
-int matinvMode(char *argString, int socket) {
-  char *pipeFile = createOutPutFile();
+int matinvMode(char *argString, int socket, int sol) {
+  char pipeFile[100] = "matinv_client";
+  createOutPutFile(pipeFile, sol);
   char *command = getCommand(argString);
 
   // As matinv does not write to a resultfile it must be piped to one
@@ -84,23 +83,22 @@ int matinvMode(char *argString, int socket) {
 
   strcat(pipeString, pipeFile);
   strcat(command, pipeString);
-  printf("%s\n", command);
 
   if (system(command) != 0) {
     return 1;
   }
+  printf("Sending solution: %s\n", pipeFile);
   transferFile(socket, 4096, pipeFile);
 
-  free(pipeFile);
   return 0;
 }
 
-int kmeansMode(char *argString, int socket) {
+int kmeansMode(char *argString, int socket, int sol) {
+  char outputFile[100] = "kmeans_client";
   char parsedCommand[255] = "kmeans";
   char *k = getK(argString);
-  printf("%s\n", k);
   char *inputFile = createInPutFile();
-  char *outputFile = createOutPutFile();
+  createOutPutFile(outputFile, sol);
   char fileFlag[100] = " -f ";
   char kFlag[100] = " -k ";
   char oFlag[100] = " -o ";
@@ -111,7 +109,6 @@ int kmeansMode(char *argString, int socket) {
   strcat(parsedCommand, fileFlag);
   strcat(parsedCommand, oFlag);
   char *command = getCommand(parsedCommand);
-  printf("%s\n", command);
   recvFile(socket, inputFile, "w");
   if (system(command) != 0) {
     return 1;
@@ -120,18 +117,17 @@ int kmeansMode(char *argString, int socket) {
   remove(inputFile);
   remove(outputFile);
   free(inputFile);
-  free(outputFile);
   free(command);
   return 0;
 }
 
-int initCalculation(char *argString, int mode, int socket) {
+int initCalculation(char *argString, int mode, int socket, int sol) {
   rmNewLine(argString);
 
   if (mode == MATINV) {
-    return matinvMode(argString, socket);
+    return matinvMode(argString, socket, sol);
   } else if (mode == KMEANS) {
-    return kmeansMode(argString, socket);
+    return kmeansMode(argString, socket, sol);
   }
   return 0;
 }

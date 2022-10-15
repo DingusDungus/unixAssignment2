@@ -1,5 +1,6 @@
 #include "../include/fileTransfer.h"
 #include <string.h>
+#include <sys/socket.h>
 
 char *getFile(char *argString) {
   char *fileName = (char *)malloc(sizeof(char) * 100);
@@ -92,6 +93,20 @@ void sendChunks(FILE *fs, char *resBuf, int bufSize, const int MAX_CHUNK,
   }
 }
 
+int sendPid(int socket)
+{
+  char pid[100];
+  sprintf(pid, "%d", getpid());
+  send(socket, pid, sizeof(char) * 100, 0);
+  return 0;
+}
+
+int recvPid(int socket, char *pid)
+{
+  recv(socket, pid, sizeof(char) * 100, 0);
+  return 0;
+}
+
 int transferFile(int socket, int chunkSize, char *filename) {
   FILE *resFile = fopen(filename, "r");
   const int MAX_CHUNK = chunkSize; // Max bytes allowed for server to send per
@@ -132,7 +147,6 @@ int recvFile(int socket, char *filename, char *fileMode) {
     int size = getWorkSize(recvData, chunkSize);
     fwrite(recvData, 1, sizeof(char) * size, resFile);
   }
-  printf("Results appended to file [%s]\n", filename);
 
   fclose(resFile);
   free(recvData);
