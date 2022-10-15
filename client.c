@@ -8,19 +8,16 @@
 #include <unistd.h>
 
 #include "./mathserver/include/fileTransfer.h"
-#include "mathserver/include/modeDefinitions.h"
+#include "./mathserver/include/modeDefinitions.h"
+#include "./mathserver/include/clientArgsParsing.h"
+#include "mathserver/include/clientOptions.h"
 
 int main(int argc, char const *argv[]) {
-  // get port for server
-  if (argc > 3) {
-    printf("Error; Not enough arguments (require port and IP)!\n");
-    return -1;
-  }
-  const int PORT_NUMBER = atoi(argv[1]);
-
-  // Get IP for server
+  struct options clientOptions;
+  parseArgs(argv, argc, &clientOptions);
+  // Converts ip from argv to ip for computer
   struct in_addr SERVER_ADDRESS;
-  int result = inet_pton(AF_INET, argv[2], &SERVER_ADDRESS);
+  int result = inet_pton(AF_INET, clientOptions.address, &SERVER_ADDRESS);
   if (result != 1) {
     printf("Error; IP-address is invalid!\n");
     return -1;
@@ -31,7 +28,7 @@ int main(int argc, char const *argv[]) {
   struct sockaddr_in servAddr;
 
   servAddr.sin_family = AF_INET;
-  servAddr.sin_port = htons(PORT_NUMBER);
+  servAddr.sin_port = htons(clientOptions.port);
   servAddr.sin_addr.s_addr = SERVER_ADDRESS.s_addr;
   printf("Connecting to %d\n", SERVER_ADDRESS.s_addr);
 

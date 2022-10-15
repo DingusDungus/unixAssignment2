@@ -10,7 +10,7 @@ cleanKmeans:
 	rm -f kmeans
 
 client: cleanClient
-	gcc -Wall ./mathserver/src/fileTransfer.c client.c -o client -g
+	gcc -Wall ./mathserver/src/fileTransfer.c ./mathserver/src/clientArgsParsing.c client.c -o client -g
 
 cleanSeqKmeans:
 	rm -f seqkmeans
