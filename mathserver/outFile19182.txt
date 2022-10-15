@@ -1,0 +1,24 @@
+Matrix Inverse parallel
+Number of threads: 16
+
+size      = 4x4 
+maxnum    = 15 
+Init    = fast 
+Initializing matrix...done 
+
+End: Input Matrix:
+  1.00  0.00  0.00  0.00
+  0.00  1.00  0.00  0.00
+  0.00  0.00  1.00  0.00
+  0.00  0.00  0.00  1.00
+
+
+Inversed Matrix:
+  0.27 -0.06 -0.06 -0.06
+ -0.06  0.27 -0.06 -0.06
+ -0.06 -0.06  0.27 -0.06
+ -0.06 -0.06 -0.06  0.27
+
+
+ The matrix is an identity matrix.
+

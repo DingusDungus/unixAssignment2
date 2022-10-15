@@ -40,8 +40,8 @@ kmeans
 seqmatinv
 seqkmeans
 vgcore*
-client
-mathserver
+./client
+./mathserver/mathserver
 
 # Extra
 ./kmeans-results.txt
