@@ -45,6 +45,8 @@ mathserver
 
 # Extra
 ./kmeans-results.txt
+./matinvOutputFile.txt
+./kmeansOutputFile.txt
 
 # Debug files
 *.dSYM/

@@ -69,12 +69,12 @@ int main(int argc, char const *argv[]) {
       }
       if (mode == KMEANS) {
         char *inputfile = getFile(sendData);
-        char outFile[100] = "outputFile.txt";
+        char outFile[100] = "kmeansOutputFile.txt";
         transferFile(sockD, 4096, inputfile);
         recvFile(sockD, outFile, "w");
         printf("Kmeans results in: %s\n", outFile);
       } else {
-        recvFile(sockD, "clientResultFile.txt", "a");
+        recvFile(sockD, "matinvOutputFile.txt", "a");
       }
     }
     send(sockD, sendData, sizeof(sendData), 0);
