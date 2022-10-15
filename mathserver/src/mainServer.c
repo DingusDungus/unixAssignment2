@@ -1,18 +1,7 @@
 #include "../include/mainServer.h"
 
-void printHelp()
-{
-    printf(
-        "-Mathserver v.1.0-\n   -h // Prints out server options and their functionality\n   -p [port] // Allows you to give a custom port to the server\n   -d // Option to run server as a daemon\n   -s [muxbasic || muxscale] // Multiplexing options\n");
-}
-
 int mainServer(int *clientSocket, struct options *serverOpts)
 {
-    if (serverOpts->helpRequested)
-    {
-        printHelp();
-        return 1;
-    }
     // create server socket
     int servSockD = socket(AF_INET, SOCK_STREAM, 0);
 

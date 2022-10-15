@@ -34,6 +34,6 @@ void sendChunks(FILE *fs, char *resBuf, int bufSize, const int MAX_CHUNK, int so
 int transferFile(int socket, int chunkSize, char* fileName);
 
 // Recieves file from socket in chunks
-int recvFile(int socket, char *fileName);
+int recvFile(int socket, char *fileName, char *fileMode);
 
 #endif

@@ -39,6 +39,7 @@ matinv
 kmeans
 seqmatinv
 seqkmeans
+vgcore*
 
 # Extra
 ./kmeans-results.txt

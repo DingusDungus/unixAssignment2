@@ -71,10 +71,10 @@ int main(int argc, char const *argv[]) {
         char *inputfile = getFile(sendData);
         char outFile[100] = "outputFile.txt";
         transferFile(sockD, 4096, inputfile);
-        recvFile(sockD, outFile);
+        recvFile(sockD, outFile, "w");
         printf("Kmeans results in: %s\n", outFile);
       } else {
-        recvFile(sockD, "clientResultFile.txt");
+        recvFile(sockD, "clientResultFile.txt", "a");
       }
     }
     send(sockD, sendData, sizeof(sendData), 0);

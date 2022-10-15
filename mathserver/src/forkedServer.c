@@ -5,7 +5,7 @@ int forkedServer(int *clientSocket) {
   char sendMsg[255] =
       "Welcome to mathserver API\n"
       "Options:\n"
-      "    matinv -n [size of matrix] -P [parallel, 1-] -I [rand || fast]\n"
+      "    matinv -n [size of matrix] -I [rand || fast]\n"
       "    kmeans -k [number of clusters] -f [local file to read data from]\n"
       "-------------------------\n"
       "When finished write [done]\n";
@@ -22,7 +22,12 @@ int forkedServer(int *clientSocket) {
       break;
     }
     int mode = getMode(recvData);
-    initCalculation(recvData, mode, *clientSocket);
+    if (initCalculation(recvData, mode, *clientSocket) == 1)
+    {
+      printf("User (%d) input illegal code\n", getpid());
+      break;
+    }
+
   }
   close(*clientSocket);
   return 1;

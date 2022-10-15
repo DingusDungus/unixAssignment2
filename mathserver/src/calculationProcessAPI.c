@@ -75,7 +75,7 @@ char *getCommand(char *argString) {
   return res;
 }
 
-char *matinvMode(char *argString, int socket) {
+int matinvMode(char *argString, int socket) {
   char *pipeFile = createOutPutFile();
   char *command = getCommand(argString);
 
@@ -87,7 +87,7 @@ char *matinvMode(char *argString, int socket) {
   printf("%s\n", command);
 
   if (system(command) != 0) {
-    return 0;
+    return 1;
   }
   transferFile(socket, 4096, pipeFile);
 
@@ -95,7 +95,7 @@ char *matinvMode(char *argString, int socket) {
   return 0;
 }
 
-char *kmeansMode(char *argString, int socket) {
+int kmeansMode(char *argString, int socket) {
   char parsedCommand[255] = "kmeans";
   char *k = getK(argString);
   printf("%s\n", k);
@@ -112,17 +112,20 @@ char *kmeansMode(char *argString, int socket) {
   strcat(parsedCommand, oFlag);
   char *command = getCommand(parsedCommand);
   printf("%s\n", command);
-  recvFile(socket, inputFile);
+  recvFile(socket, inputFile, "w");
   if (system(command) != 0) {
-    return 0;
+    return 1;
   }
   transferFile(socket, 4096, outputFile);
+  remove(inputFile);
+  remove(outputFile);
   free(inputFile);
+  free(outputFile);
   free(command);
   return 0;
 }
 
-char *initCalculation(char *argString, int mode, int socket) {
+int initCalculation(char *argString, int mode, int socket) {
   rmNewLine(argString);
 
   if (mode == MATINV) {

@@ -15,6 +15,6 @@
 #include "./modeDefinitions.h"
 #include "./fileTransfer.h"
 
-char* initCalculation(char *argString, int mode, int socket);
+int initCalculation(char *argString, int mode, int socket);
 
 #endif

@@ -96,7 +96,6 @@ int transferFile(int socket, int chunkSize, char *filename) {
   FILE *resFile = fopen(filename, "r");
   const int MAX_CHUNK = chunkSize; // Max bytes allowed for server to send per
                                    // send (buffer might discard if too big)
-  printf("Transferring file\n");
   fseek(resFile, 0L, SEEK_END);
   int size = ftell(resFile);
   fseek(resFile, 0L, SEEK_SET);
@@ -105,20 +104,19 @@ int transferFile(int socket, int chunkSize, char *filename) {
 
   fread(resBuf, sizeof(char), size, resFile);
   fclose(resFile);
-  printf("%s\n", resBuf);
   size = getWorkSize(resBuf, size);
   sendChunks(resFile, resBuf, size, MAX_CHUNK, socket);
   return 0;
 }
 
-int recvFile(int socket, char *filename) {
+int recvFile(int socket, char *filename, char *fileMode) {
   int chunkSize;
   int res;
   if ((res = recv(socket, &chunkSize, sizeof(chunkSize), 0) == -1)) {
     printf("Error reading results\n");
     return 1;
   }
-  FILE *resFile = fopen(filename, "a");
+  FILE *resFile = fopen(filename, fileMode);
   char *recvData = (char *)malloc(sizeof(char) * chunkSize);
   // Recieves chunks from server and appends them to result file
   while (strcmp(recvData, "done")) {
