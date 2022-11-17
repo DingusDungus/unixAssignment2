@@ -11,6 +11,7 @@
 #include "./mathserver/include/modeDefinitions.h"
 #include "./mathserver/include/clientArgsParsing.h"
 #include "mathserver/include/clientOptions.h"
+#include "./mathserver/include/clientErrorChecking.h"
 
 void getFileName(char *fileName, int nr, char *clientNr)
 {
@@ -72,9 +73,13 @@ int main(int argc, char const *argv[]) {
         break;
       }
       int mode = getMode(sendData);
+      if (!checkCommandValidity(sendData))
+      {
+        mode = UNACCEPTABLE_INPUT;
+      }
       if (mode == UNACCEPTABLE_INPUT) {
         printf("Error; No command of such syntax found! (acceptable: matinv, "
-               "kmeans)\n");
+               "kmeans, done)\n");
         continue;
       }
       if ((res = send(sockD, sendData, sizeof(sendData), 0)) == -1) {
@@ -85,15 +90,19 @@ int main(int argc, char const *argv[]) {
         char outFile[100] = "kmeans_client";
         kmeansResCount++;
         getFileName(outFile, matinvResCount, clientNr);
-        transferFile(sockD, 4096, inputfile);
-        recvFile(sockD, outFile, "w");
-        printf("Received the solution: %s\n", outFile);
+        transferFile(sockD, 4096, inputfile, false);
+        if (recvFile(sockD, outFile, "w") == 0)
+        {
+          printf("Received the solution: %s\n", outFile);
+        }
       } else {
         char file[100] = "matinv_client";
         matinvResCount++;
         getFileName(file, matinvResCount, clientNr);
-        recvFile(sockD, file, "w");
-        printf("Received the solution: %s\n", file);
+        if (recvFile(sockD, file, "w") == 0)
+        {
+          printf("Received the solution: %s\n", file);
+        }
       }
     }
     send(sockD, sendData, sizeof(sendData), 0);

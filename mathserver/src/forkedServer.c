@@ -30,14 +30,14 @@ int forkedServer(int *clientSocket) {
       kmeansSol++;
       if (initCalculation(recvData, mode, *clientSocket, kmeansSol) == 1) {
         printf("Client (%d) input illegal code\n", getpid());
-        break;
+        transferFile(*clientSocket, 0, 0, true);
       }
     }
     else if (mode == MATINV) {
       matinvSol++;
       if (initCalculation(recvData, mode, *clientSocket, matinvSol) == 1) {
         printf("Client (%d) input illegal code\n", getpid());
-        break;
+        transferFile(*clientSocket, 0, 0, true);
       }
     }
   }

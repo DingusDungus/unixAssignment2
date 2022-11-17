@@ -107,7 +107,21 @@ int recvPid(int socket, char *pid)
   return 0;
 }
 
-int transferFile(int socket, int chunkSize, char *filename) {
+int transferFile(int socket, int chunkSize, char *filename, bool failure) {
+  // Error handling for server
+  if (failure)
+  {
+    char *failureMessage = "Failure";
+    if (send(socket, failureMessage, sizeof(char) * 20, 0) == -1) {
+      printf("Send unsuccessful, tried to send failure message\n");
+    }
+    return 0;
+  } else {
+    char *failureMessage = "Non-failure";
+    if (send(socket, failureMessage, sizeof(char) * 20, 0) == -1) {
+      printf("Send unsuccessful, tried to send non-failure message\n");
+    }
+  }
   FILE *resFile = fopen(filename, "r");
   const int MAX_CHUNK = chunkSize; // Max bytes allowed for server to send per
                                    // send (buffer might discard if too big)
@@ -126,7 +140,19 @@ int transferFile(int socket, int chunkSize, char *filename) {
 
 int recvFile(int socket, char *filename, char *fileMode) {
   int chunkSize;
+  char failureMessage[20];
   int res;
+  // Capturing failure data
+  if ((res = recv(socket, &failureMessage, sizeof(char) * 20, 0) == -1)) {
+    printf("Error reading results\n");
+    return 1;
+  }
+  if (strcmp(failureMessage, "Failure") == 0)
+  {
+    printf("Error; Command failed on server-side\n");
+    return 1;
+  }
+  // Capturing size of data
   if ((res = recv(socket, &chunkSize, sizeof(chunkSize), 0) == -1)) {
     printf("Error reading results\n");
     return 1;

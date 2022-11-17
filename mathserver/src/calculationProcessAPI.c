@@ -88,7 +88,7 @@ int matinvMode(char *argString, int socket, int sol) {
     return 1;
   }
   printf("Sending solution: %s\n", pipeFile);
-  transferFile(socket, 4096, pipeFile);
+  transferFile(socket, 4096, pipeFile, false);
 
   return 0;
 }
@@ -113,7 +113,7 @@ int kmeansMode(char *argString, int socket, int sol) {
   if (system(command) != 0) {
     return 1;
   }
-  transferFile(socket, 4096, outputFile);
+  transferFile(socket, 4096, outputFile, false);
   remove(inputFile);
   remove(outputFile);
   free(inputFile);

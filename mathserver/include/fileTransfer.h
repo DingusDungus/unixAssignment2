@@ -37,7 +37,7 @@ int copy2chunk(char *chunk, char *resBuf, int bufSize, const int MAX_CHUNK, int 
 void sendChunks(FILE *fs, char *resBuf, int bufSize, const int MAX_CHUNK, int socket);
 
 // Transfers file to socket in chunks
-int transferFile(int socket, int chunkSize, char* fileName);
+int transferFile(int socket, int chunkSize, char* fileName, bool failure);
 
 // Recieves file from socket in chunks
 int recvFile(int socket, char *fileName, char *fileMode);
