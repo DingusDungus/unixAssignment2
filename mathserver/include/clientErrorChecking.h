@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "helperFunctions.h"
+
 bool checkCommandValidity(char *command);
 
 #endif

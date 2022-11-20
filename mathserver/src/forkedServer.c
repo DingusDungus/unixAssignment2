@@ -9,6 +9,7 @@ int forkedServer(int *clientSocket) {
       "Options:\n"
       "    matinv -n [size of matrix] -I [rand || fast]\n"
       "    kmeans -k [number of clusters] -f [local file to read data from]\n"
+      "    example input: kmeans -k 9 -f data.txt\n"
       "-------------------------\n"
       "When finished write [done]\n";
   char recvData[255];

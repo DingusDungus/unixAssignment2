@@ -77,6 +77,7 @@ int main(int argc, char const *argv[]) {
       {
         mode = UNACCEPTABLE_INPUT;
       }
+      
       if (mode == UNACCEPTABLE_INPUT) {
         printf("Error; No command of such syntax found! (acceptable: matinv, "
                "kmeans, done)\n");

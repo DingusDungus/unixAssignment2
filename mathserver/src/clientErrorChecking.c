@@ -1,86 +1,98 @@
 #include "../include/clientErrorChecking.h"
 #include <string.h>
-bool checkIfFlagHasValue(char *command, int index) {
-  char temp[100];
-  int tempi = 0;
-  for (int i = index; command[i] != ' ' && command[i] != 0; i++, tempi++) {
-    temp[tempi] = command[i];
+#include <ctype.h>
+
+// Checks if argv meet requirements for matinv
+bool matinvCheck(char argv[10][100])
+{
+  for (int i = 1;i < 10 && argv[i][0] != 0;i++)
+  {
+    if (strcmp(argv[i], "-n") == 0)
+    {
+      printf("-n found\n");
+      if ((i + 1) >= 10 || !stringIsNumber(argv[i+1]))
+      {
+        printf("Error; No value given to -n, ex. -n 9\n");
+        return false;
+      }
+    }
+    else if (strcmp(argv[i], "-I") == 0)
+    {
+      printf("-I found\n");
+      if ((i + 1) >= 10 || ((strcmp(argv[i + 1], "rand") != 0 && strcmp(argv[i + 1], "fast") != 0)))
+      {
+        printf("Error; No value given to -I (acceptable \"rand\", \"fast\")\n");
+        return false;
+      }
+    }
   }
-  if (strcmp(temp, "-n") == 0) {
-    return false;
-  } else if (strcmp(temp, "-I") == 0) {
-    return false;
-  } else if (strcmp(temp, "-k") == 0) {
-    return false;
-  } else if (strcmp(temp, "-f") == 0) {
+  return true;
+}
+
+// Checks if argv meet requirements for kmeans
+bool kmeansCheck(char argv[10][100])
+{
+  bool fileGiven = false;
+  for (int i = 1;i < 10 && argv[i][0] != 0;i++)
+  {
+    if (strcmp(argv[i], "-k") == 0)
+    {
+      if ((i + 1) >= 10 || !stringIsNumber(argv[i+1]))
+      {
+        printf("Error; -k flag is not given a number\n");
+        return false;
+      }
+    }
+    else if (strcmp(argv[i], "-f") == 0)
+    {
+      if ((i + 1) >= 10)
+      {
+        fileGiven = true;
+      }
+    }
+  }
+  if (!fileGiven)
+  {
+    printf("Error; no file given\n");
     return false;
   }
   return true;
 }
 
-bool matinvCheck(char *command, int index) {
-  bool haveN = false;
-  bool haveI = false;
-  char temp[100];
-  int tempi = 0;
-  for (int i = index; command[i] != 0; i++, tempi++) {
-    if (command[i] == 32) {
-      if (strcmp(temp, "-n") == 0) {
-        if (checkIfFlagHasValue(command, i + 1)) {
-          haveN = true;
-        }
-      } else if (strcmp(temp, "-I") == 0) {
-        if (checkIfFlagHasValue(command, i + 1)) {
-          haveI = true;
-        }
-      }
-      printf("Temp: %s\n", temp);
-      temp[tempi] = command[i];
-      memset(temp, 0, sizeof(char) * 100);
-      tempi = 0;
+// Splits command into array
+void transformIntoARGV(char *command, char argv[10][100])
+{
+  int vIndex1 = 0;
+  int vIndex2 = 0;
+  for (int i = 0;command[i] != 0;i++)
+  {
+    if (command[i] == ' ')
+    {
+      argv[vIndex1][vIndex2] = 0;
+      vIndex1++;
+      vIndex2 = 0;
+      continue;
     }
-    if (haveN == true && haveI == true) {
-      return true;
-    }
+    argv[vIndex1][vIndex2] = command[i];
+    vIndex2++;
   }
-  return false;
 }
 
-bool kmeansCheck(char *command, int index) {
-  bool haveK = false;
-  bool haveF = false;
-  char temp[100];
-  for (int i = index; command[i] != 0; i++) {
-    if (command[i] == ' ') {
-      if (strcmp(temp, "-k") == 0) {
-        if (checkIfFlagHasValue(command, i + 1)) {
-          haveK = true;
-        }
-      } else if (strcmp(temp, "-f") == 0) {
-        if (checkIfFlagHasValue(command, i + 1)) {
-          haveF = true;
-        }
-      }
-      memset(temp, 0, sizeof(char) * 100);
-    }
-    temp[i] = command[i];
-    if (haveK == true && haveF == true) {
-      return true;
-    }
-  }
-  return false;
-}
-
+// Checks if client input is valid
 bool checkCommandValidity(char *command) {
-  char prequel[10];
-  int i;
-  for (i = 0; i < 10 && command[i] != ' '; i++) {
-    prequel[i] = command[i];
+  char argv[10][100];
+  transformIntoARGV(command, argv);
+  if (strcmp(argv[0], "matinv") == 0)
+  {
+    return matinvCheck(argv);
   }
-  if (strcmp(prequel, "matinv") == 0) {
-    return matinvCheck(command, i + 1);
-  } else if (strcmp(prequel, "kmeans") == 0) {
-    return kmeansCheck(command, i + 1);
+  else if (strcmp(argv[0], "kmeans") == 0)
+  {
+    return kmeansCheck(argv);
+  }
+  else if (strcmp(argv[0], "done") == 0)
+  {
+    return true;
   }
   return false;
 }
