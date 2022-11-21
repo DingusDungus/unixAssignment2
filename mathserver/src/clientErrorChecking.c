@@ -32,7 +32,7 @@ bool matinvCheck(char argv[10][100])
 // Checks if argv meet requirements for kmeans
 bool kmeansCheck(char argv[10][100])
 {
-  bool fileGiven = false;
+  bool fFlagGiven = false;
   for (int i = 1;i < 10 && argv[i][0] != 0;i++)
   {
     if (strcmp(argv[i], "-k") == 0)
@@ -42,46 +42,36 @@ bool kmeansCheck(char argv[10][100])
         printf("Error; -k flag is not given a number\n");
         return false;
       }
+      continue;
     }
-    else if (strcmp(argv[i], "-f") == 0)
+
+    if (strcmp(argv[i], "-f") == 0)
     {
-      if ((i + 1) >= 10)
+      if ((i + 1) < 10 && argv[i+1][0] != 0)
       {
-        fileGiven = true;
+        if (!fileExists(argv[i + 1]))
+        {
+          printf("Error; Given file does not exist!\n");
+          return false;
+        }
+      } else {
+        printf("Error; No file was given after -f flag\n");
+        return false;
       }
+      fFlagGiven = true;
     }
   }
-  if (!fileGiven)
-  {
-    printf("Error; no file given\n");
+  if (!fFlagGiven) {
+    printf("Error; No -f flag given, no file given, required for kmeans!\n");
     return false;
   }
   return true;
 }
 
-// Splits command into array
-void transformIntoARGV(char *command, char argv[10][100])
-{
-  int vIndex1 = 0;
-  int vIndex2 = 0;
-  for (int i = 0;command[i] != 0;i++)
-  {
-    if (command[i] == ' ')
-    {
-      argv[vIndex1][vIndex2] = 0;
-      vIndex1++;
-      vIndex2 = 0;
-      continue;
-    }
-    argv[vIndex1][vIndex2] = command[i];
-    vIndex2++;
-  }
-}
-
 // Checks if client input is valid
 bool checkCommandValidity(char *command) {
   char argv[10][100];
-  transformIntoARGV(command, argv);
+  transformIntoArgV(command, argv);
   if (strcmp(argv[0], "matinv") == 0)
   {
     return matinvCheck(argv);
