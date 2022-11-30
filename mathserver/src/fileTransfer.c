@@ -10,9 +10,7 @@ char *getFile(char *argString) {
     if (argString[i] == '-' && argString[i + 1] == 'f') {
       flagFound = true;
       i = i + 2;
-    }
-    else if (argString[i] != ' ' && flagFound && 
-    argString[i] != '\n') {
+    } else if (argString[i] != ' ' && flagFound && argString[i] != '\n') {
       fileName[index] = argString[i];
       index++;
     } else if (index > 0) {
@@ -93,24 +91,21 @@ void sendChunks(FILE *fs, char *resBuf, int bufSize, const int MAX_CHUNK,
   }
 }
 
-int sendPid(int socket)
-{
+int sendPid(int socket) {
   char pid[100];
   sprintf(pid, "%d", getpid());
   send(socket, pid, sizeof(char) * 100, 0);
   return 0;
 }
 
-int recvPid(int socket, char *pid)
-{
+int recvPid(int socket, char *pid) {
   recv(socket, pid, sizeof(char) * 100, 0);
   return 0;
 }
 
 int transferFile(int socket, int chunkSize, char *filename, bool failure) {
   // Error handling for server
-  if (failure)
-  {
+  if (failure) {
     char *failureMessage = "Failure";
     if (send(socket, failureMessage, sizeof(char) * 20, 0) == -1) {
       printf("Send unsuccessful, tried to send failure message\n");
@@ -132,9 +127,9 @@ int transferFile(int socket, int chunkSize, char *filename, bool failure) {
   memset(resBuf, 0, sizeof(resBuf));
 
   fread(resBuf, sizeof(char), size, resFile);
-  fclose(resFile);
   size = getWorkSize(resBuf, size);
   sendChunks(resFile, resBuf, size, MAX_CHUNK, socket);
+  fclose(resFile);
   return 0;
 }
 
@@ -147,8 +142,7 @@ int recvFile(int socket, char *filename, char *fileMode) {
     printf("Error reading results\n");
     return 1;
   }
-  if (strcmp(failureMessage, "Failure") == 0)
-  {
+  if (strcmp(failureMessage, "Failure") == 0) {
     printf("Error; Command failed on server-side\n");
     return 1;
   }
@@ -166,8 +160,7 @@ int recvFile(int socket, char *filename, char *fileMode) {
       printf("Sender disconnected\n");
       return 1;
     }
-    if (isEqual(recvData, "done", 100, 4))
-    {
+    if (isEqual(recvData, "done", 100, 4)) {
       break;
     }
     int size = getWorkSize(recvData, chunkSize);
